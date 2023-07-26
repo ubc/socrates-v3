@@ -14,23 +14,23 @@ namespace UBC\CTLT;
  */
 class Socrates_Settings {
 
-    /**
-     * Construct the plugin object.
-     */
-    public function __construct() {
+	/**
+	 * Construct the plugin object.
+	 */
+	public function __construct() {
 
 		// Register our settings.
 		add_action( 'admin_init', array( $this, 'admin_init__socrates_register_socrates_settings' ) );
 
 		// Add admin menu
-        add_action( 'admin_menu', array( $this, 'admin_menu__socrates_admin_menu' ) );
+		add_action( 'admin_menu', array( $this, 'admin_menu__socrates_admin_menu' ) );
 
 		// Load our JavaScript
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts__socrates_enqueue_admin_js' ) );
 
-    }
+	}
 
-    /**
+	/**
 	 * Set up the main Socrates settings page.
 	 *
 	 * @return void
@@ -43,7 +43,7 @@ class Socrates_Settings {
 			return;
 		}
 
-        add_options_page(
+		add_options_page(
 			'Socratic Method Version 3 Settings',
 			'Socrates',
 			'manage_options',
@@ -94,6 +94,18 @@ class Socrates_Settings {
 
 		register_setting( 'socrates_feed_settings', 'socratic_link_collection_cadence', array(
 			'sanitize_callback' => 'sanitize_text_field'
+		) );
+
+		register_setting( 'socrates_notw_settings', 'socratic_notw_day', array(
+			'sanitize_callback' => 'sanitize_text_field'
+		) );
+
+		register_setting( 'socrates_notw_settings', 'socratic_include_other_category_links', array(
+			'sanitize_callback' => 'sanitize_text_field',
+		) );
+
+		register_setting( 'socrates_notw_settings', 'socratic_notw_post_category', array(
+			'sanitize_callback' => 'absint',
 		) );
 
 
@@ -151,6 +163,7 @@ class Socrates_Settings {
 
 			<a href="?page=socrates&tab=prompt_settings" class="nav-tab <?php echo $active_tab == 'prompt_settings' ? 'nav-tab-active' : ''; ?>"><?php _e( 'Prompt Settings' ); ?></a>
 			<a href="?page=socrates&tab=feed_settings" class="nav-tab <?php echo $active_tab == 'feed_settings' ? 'nav-tab-active' : ''; ?>"><?php _e( 'Feed Settings' ); ?></a>
+			<a href="?page=socrates&tab=news_of_the_week" class="nav-tab <?php echo $active_tab == 'news_of_the_week' ? 'nav-tab-active' : ''; ?>"><?php _e( 'News Of The Week Settings' ); ?></a>
 			<?php
 
 				/**
@@ -175,6 +188,10 @@ class Socrates_Settings {
 
 			case 'feed_settings':
 				$this->socrates_tab_output__feed_settings();
+				break;
+
+			case 'news_of_the_week':
+				$this->socrates_tab_output__notw_settings();
 				break;
 
 			default:
@@ -232,7 +249,7 @@ class Socrates_Settings {
 				</tbody>
 			</table>
 
-			<button id="fetch-data" type="button" class="button">Fetch Data</button>
+			<button id="fetch-data" type="button" class="button">Fetch Feeds</button>
 
 			<div id="data-container"></div> <!-- This div will contain the fetched data -->
 
@@ -359,6 +376,85 @@ class Socrates_Settings {
 
 
 	/**
+	 * Output for the NOTW Tab.
+	 *
+	 * @return void
+	 * @since 3.0.1
+	 */
+	public function socrates_tab_output__notw_settings() {
+
+		?>
+		<!-- Feed Settings tab content -->
+		<form method="post" id="notw-form" action="options.php">
+			<?php
+			settings_fields( 'socrates_notw_settings' );
+			do_settings_sections( 'socrates_notw_settings' );
+			?>
+
+			<table class="form-table" role="presentation">
+				<tbody>
+					<!-- NOTW Day field -->
+					<tr>
+						<th scope="row"><label for="socratic_notw_day">News of the Week Post Day</label></th>
+						<td>
+							<select id="socratic_notw_day" name="socratic_notw_day">
+								<?php
+								$options = array( 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday',  );
+								$current_option = get_option( 'socratic_notw_day' );
+								foreach ( $options as $option ) {
+									echo '<option value="' . esc_attr( $option ) . '"' . selected( $current_option, $option, false ) . '>' . esc_html( $option ) . '</option>';
+								}
+								?>
+							</select>
+						</td>
+					</tr>
+					<!-- NEws of the week category field -->
+					<tr>
+						<th scope="row">News of the Week Post Category</th>
+						<td>
+							<?php
+								$categories = $this->get_post_categories_for_notw_category();
+								$current_value = get_option( 'socratic_notw_post_category' );
+								echo '<select name="socratic_notw_post_category" name="socratic_notw_post_category">';
+								foreach ( $categories as $category ) {
+									echo '<option value="' . esc_attr( $category->term_id ) . '"' . selected( $category->term_id, $current_value, false ) . '>' . esc_html( $category->name ) . '</option>';
+								}
+								echo '</select>';
+							?>
+
+						</td>
+					</tr>
+					<!-- Include other categories field -->
+					<tr>
+						<th scope="row">Include "other" category links in News of the Week posts</th>
+						<td>
+							<?php
+								$include_other_cat = get_option( 'socratic_include_other_category_links' );
+								if ( ! $include_other_cat || empty( $include_other_cat ) ) {
+									$include_other_cat = 'no';
+								}
+							?>
+							<?php echo '<label><input type="radio" name="socratic_include_other_category_links" value="yes"' . checked( 'yes', $include_other_cat, false ) . '>Yes</label>'; ?>
+							<?php echo '<label><input type="radio" name="socratic_include_other_category_links" value="no"' . checked( 'no', $include_other_cat, false ) . '>No</label>'; ?>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+
+			<button id="create-notw-post" type="button" class="button">Create NOTW Post</button>
+
+			<div id="notw-result"></div> <!-- This div will contain the fetched data -->
+
+			<div id="spinner" style="display: none;">Some spinner</div>
+
+			<?php submit_button(); ?>
+		</form>
+		<?php
+
+	}//end socrates_tab_output__notw_settings()
+
+
+	/**
 	 * Sanitize the starting prompt,reserving the newlines.
 	 *
 	 * @param  string $prompt
@@ -398,6 +494,24 @@ class Socrates_Settings {
 	public function sanitize_categories( $input ) {
 		return array_map( 'sanitize_text_field', $input );
 	}
+
+
+	/**
+	 * We need to know which category to put the news of the week posts in.
+	 *
+	 * @return array
+	 * @since 3.0.1
+	 */
+	public function get_post_categories_for_notw_category() {
+
+		$categories = get_terms( array(
+			'taxonomy' => 'category',
+			'hide_empty' => false,
+		) );
+
+		return $categories;
+
+	}//end get_post_categories_for_notw_category()
 
 	/**
 	 * Register and enqueue our admin JS

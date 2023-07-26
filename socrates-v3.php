@@ -51,6 +51,9 @@ class SocratesV3 {
 		// AJAX handler to fetch feeds
 		add_action( 'wp_ajax_fetch_feeds', array( $this, 'wp_ajax_fetch_feeds__fetch_feeds_loader' ) );
 
+		// AJAX Handler to create NOTW Post
+		add_action( 'wp_ajax_create_notw_post', array( $this, 'wp_ajax_create_notw_post__create_notw_post' ) );
+
 	}//end __construct()
 
 
@@ -105,6 +108,33 @@ class SocratesV3 {
 		wp_die();
 
 	}//end wp_ajax_fetch_feeds__fetch_feeds_loader()
+
+
+	/**
+	 * AJAX Handler for the NOTW post creation
+	 *
+	 * @return void
+	 * @since 3.0.1
+	 */
+	public function wp_ajax_create_notw_post__create_notw_post() {
+
+		// Check for nonce security
+		if ( ! check_ajax_referer( 'socrates_nonce', 'nonce', false ) ) {
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'ajax referer fail' ), true ), FILE_APPEND ); // phpcs:ignore
+			echo 'Nonce check failed!';
+			wp_die();
+		}
+
+		require_once plugin_dir_path( __FILE__ ) . 'inc/admin/class-socrates-notw-post-creator.php';
+
+		$notw_post_creator = new \UBC\CTLT\Socrates_Notw_Post_Creator();
+
+		// Return the string "Post Created."
+		echo 'Post Created. This is a lie.';
+
+		wp_die(); // All ajax handlers should die when finished
+
+	}//end wp_ajax_create_notw_post__create_notw_post()
 
 }
 

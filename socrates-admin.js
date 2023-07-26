@@ -124,6 +124,7 @@ document.addEventListener( 'DOMContentLoaded', function() {
     } );
 } );
 
+// If the admin selects the Every Sunday at Midnight cadence, show a message letting them now some links may be missed
 document.addEventListener( 'DOMContentLoaded', function() {
     let linkCollectionCadence = document.getElementById( 'link-collection-cadence' ),
         notice = document.getElementById( 'notice' );
@@ -140,4 +141,39 @@ document.addEventListener( 'DOMContentLoaded', function() {
             notice.style.display = 'none';
         }
     } );
+} );
+
+document.addEventListener('DOMContentLoaded', function() {
+
+    var createNotwPostButton = document.getElementById( 'create-notw-post' );
+
+	if ( ! createNotwPostButton ) {
+		return;
+	}
+
+	createNotwPostButton.addEventListener( 'click', function() {
+
+		var xhr = new XMLHttpRequest();
+		var params = 'action=create_notw_post&nonce=' + socrates_obj.nonce;
+
+		xhr.open( 'POST', socrates_obj.ajax_url, true );
+		xhr.setRequestHeader( 'Content-type', 'application/x-www-form-urlencoded' );
+
+		xhr.onload = function() {
+			if ( this.status >= 200 && this.status < 400 ) {
+				// Success!
+				document.getElementById( 'notw-result' ).innerHTML = this.response;
+			} else {
+				// Error :(
+				console.error( 'AJAX error: ' + this.status );
+			}
+		};
+
+		xhr.onerror = function() {
+			// Connection error
+			console.error( 'AJAX connection error' );
+		};
+
+		xhr.send( params );
+	} );
 } );

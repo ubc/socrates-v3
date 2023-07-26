@@ -238,6 +238,7 @@ class Socrates_Fetch_Feeds {
 	 */
 	public function generate_prompt() {
 
+		// Add what is in the options as the starting prompt.
 		$prompt_text = $this->get_starting_prompt();
 
 		foreach ( $this->links as $lid => $link_data ) {
@@ -245,6 +246,13 @@ class Socrates_Fetch_Feeds {
 			$prompt_text .= 'title: ' . $link_data['title'] . "\r\n";
 			$prompt_text .= 'excerpt: ' . $link_data['excerpt'] . "\r\n";
 			$prompt_text .= "\r\n";
+		}
+
+		// Now add the categories set in the options.
+		$categories_string = $this->get_content_categories_as_string();
+
+		if ( ! empty( $categories_string ) ) {
+			$prompt_text .= 'Categories to use: ' . $categories_string;
 		}
 
 		$this->prompt = $prompt_text;
@@ -440,5 +448,38 @@ class Socrates_Fetch_Feeds {
 	public function get_threshold_score() {
 		return absint( get_option('socratic_minimum_threshold_score') );
 	}//end get_threshold_score()
+
+
+	/**
+	 * Fetches the categories stored in the settings
+	 *
+	 * @return array
+	 * @since 3.0.1
+	 */
+	public function get_content_categories() {
+
+		$categories = get_option( 'socratic_categories' );
+
+		if ( ! $categories || ! is_array( $categories ) || empty( $categories ) ) {
+			return array();
+		}
+
+		return $categories;
+
+	}//end get_content_categories()
+
+
+	/**
+	 * Turns the array of categories stored in the settings into a
+	 * string that can be used as part of the prompt.
+	 *
+	 * @return string
+	 * @since 3.0.1
+	 */
+	public function get_content_categories_as_string() {
+
+		return implode( ', ', $this->get_content_categories() );
+
+	}//end get_content_categories_as_string()
 
 }

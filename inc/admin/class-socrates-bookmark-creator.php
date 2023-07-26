@@ -130,6 +130,7 @@ class Socrates_Bookmark_Creator {
 				'link_description' => $article['excerpt'],
 				'link_category'    => $category_id,
 				'link_rating'      => $article['score'],
+				'link_visible'     => 'N', // Visibility is used to determine whether it's been in the NotW yet or not.
 			);
 
 			wp_insert_link( $bookmark_data );
