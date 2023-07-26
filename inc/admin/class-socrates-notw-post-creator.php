@@ -502,6 +502,68 @@ class Socrates_Notw_Post_Creator {
 	 */
 	public function send_email_to_admin() {
 
+		$newly_created_post_id = $this->newly_created_post_id;
+
+		if ( false === $newly_created_post_id ) {
+			return;
+		}
+
+		$email_subject = $this->get_email_subject();
+		$email_body    = $this->get_email_body();
+		$email_to      = $this->get_email_to();
+
+		wp_mail( $email_to, $email_subject, $email_body );
+
 	}//end send_email_to_admin()
+
+
+	/**
+	 * Returns the subject used in the email sent to the person who receives the notifcation
+	 * about the news of the week post being created.
+	 *
+	 * @return string
+	 * @since 3.0.1
+	 */
+	public function get_email_subject() {
+		return '[Action Required] : Review newly created post for "News of the week for the week of ' . $this->get_week_date_string() . '"';
+	}//end get_email_subject()
+
+
+
+	/**
+	 * Undocumented function
+	 *
+	 * @return string
+	 * @since 3.0.1
+	 */
+	public function get_email_body() {
+
+		$status = $this->post_status;
+
+		$post_edit_link = get_edit_post_link( $this->newly_created_post_id, '' );
+
+		$content = "Hi,\r\na new $status post has been created for news of the week. Please review it, you can do so at:\r\n\r\n";
+
+		$content .= $post_edit_link;
+
+		$content .= "\r\n\r\nThanks,\r\n\r\nUBÇocrates";
+
+		return $content;
+
+	}//end get_email_body()
+
+
+
+	/**
+	 * Undocumented function
+	 *
+	 * @return string
+	 * @since 3.0.1
+	 */
+	public function get_email_to() {
+		return get_option( 'admin_email' );
+	}//end get_email_to()
+
+
 
 }
