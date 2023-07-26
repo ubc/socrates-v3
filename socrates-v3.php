@@ -95,7 +95,13 @@ class SocratesV3 {
 		// Initialize feed fetcher class.
 		$socrates_feeds = new \UBC\CTLT\Socrates_Fetch_Feeds();
 
-		$socrates_feeds->output();
+		$categorized_and_scored_links = $socrates_feeds->output();
+
+		// Now we need to use this to create bookmarks.
+		require_once plugin_dir_path( __FILE__ ) . 'inc/admin/class-socrates-bookmark-creator.php';
+
+		$bookmark_class = new Socrates_Bookmark_Creator( $categorized_and_scored_links );
+
 		wp_die();
 
 	}//end wp_ajax_fetch_feeds__fetch_feeds_loader()

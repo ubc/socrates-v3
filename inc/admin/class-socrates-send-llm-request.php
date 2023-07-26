@@ -222,7 +222,7 @@ class Socrates_Send_LLM_Request {
 	/**
 	 * Send the request to the LLM and set the response locally.
 	 *
-	 * @return void
+	 * @return mixed $data The data returned from the LLM.
 	 * @since 3.0.1
 	 */
 	public function send_request() {
@@ -232,8 +232,34 @@ class Socrates_Send_LLM_Request {
 
 		$data = $this->client_class->make_request( $this->client, $this->request );
 
-		file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( __LINE__, $data ), true ), FILE_APPEND ); // phpcs:ignore
+		$this->llm_response_data = $data;
 
 	}//end send_request()
+
+
+	/**
+	 * Retrieves the data the LLM has sent back.
+	 *
+	 * @return mixed the data returned by the LLM.
+	 * @since 3.0.1
+	 */
+	public function get_llm_response_data() {
+
+		return $this->abstract_data_from_llm_response();
+
+	}//end get_llm_response_data()
+
+
+	/**
+	 * We have a raw response from the LLM, but we need just the response text.
+	 *
+	 * @return string The response string from the LLM
+	 * @since 3.0.1
+	 */
+	public function abstract_data_from_llm_response() {
+
+		return $this->client_class->get_response_string( $this->llm_response_data );
+
+	}//end abstract_data_from_llm_response()
 
 }

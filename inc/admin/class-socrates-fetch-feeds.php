@@ -43,6 +43,11 @@ class Socrates_Fetch_Feeds {
 	 */
 	var $prompt = '';
 
+	/**
+	 * Will be filled with the raw response from the LLM
+	 */
+	var $llm_response = false;
+
     /**
      * Construct the plugin object.
 	 *
@@ -77,7 +82,7 @@ class Socrates_Fetch_Feeds {
 
 
 	/**
-	 * The data to output to the screen.
+	 * Main method which fetches the feeds, categorizes them using an llm,
 	 *
 	 * @return void
 	 * @since 3.0.1
@@ -87,11 +92,6 @@ class Socrates_Fetch_Feeds {
 		// Grab all of the articles from the listed feeds.
 		foreach ( $this->socratic_feeds as $findex => $feed ) {
 			$this->fetch_articles_from_feed( esc_url( $feed['url'] ), 2 );
-		}
-
-		// Check to see which of these articles we already have in our links
-		foreach ( $this->articles as $aindex => $article ) {
-			$this->check_for_and_remove_duplicate_articles( $article );
 		}
 
 		// Now get the excerpt/content for each of these new articles.
@@ -104,6 +104,9 @@ class Socrates_Fetch_Feeds {
 
 		// Now hit the LLM to get the category, and rating for each link.
 		$this->use_llm_to_categorize_and_rate_links();
+
+		// Now we get the usable data and return it.
+		return $this->get_raw_data_for_bookmarks();
 
 	}//end output()
 
@@ -159,22 +162,6 @@ class Socrates_Fetch_Feeds {
 		$this->articles = $current_articles;
 
 	}//end update_articles_list()
-
-
-	/**
-	 * Check whether the passed $article is already in our database of links.
-	 *
-	 * @param  array $article
-	 *
-	 * @return void
-	 * @since 3.0.1
-	 */
-	public function check_for_and_remove_duplicate_articles( $article = array() ) {
-
-
-
-	}//end check_for_and_remove_duplicate_articles()
-
 
 	/**
 	 * The passed $unique_article is not in our database of links. So, before
@@ -272,7 +259,7 @@ class Socrates_Fetch_Feeds {
 	 * @since 3.0.1
 	 */
 	public function get_starting_prompt() {
-		return wp_kses_post( get_option( 'starting_prompt' ) );
+		return wp_kses_post( get_option( 'socratic_starting_prompt' ) );
 	}//end get_starting_prompt()
 
 
@@ -286,12 +273,172 @@ class Socrates_Fetch_Feeds {
 
 		require_once plugin_dir_path( __FILE__ ) . 'class-socrates-send-llm-request.php';
 
+		// Send the prompt to the LLM
 		$request = new Socrates_Send_LLM_Request();
-
 		$request->set_prompt( $this->prompt );
-
 		$request->send_request();
 
+		// This is the response from the LLM.
+		$data = $request->get_llm_response_data();
+
+		/*
+		This should look like the following:
+		Post 1 :: Score 2/10 :: Confidence 80% :: Climate Change
+		Post 2 :: Score 7/10 :: Confidence 90% :: Legal
+		... etc
+		*/
+		$this->llm_response = $data;
+
 	}//end use_llm_to_categorize_and_rate_links()
+
+
+	/**
+	 * We need to compare the links we have gathered, with the response from the LLM.
+	 * If the score is above the minimum score threshold, we create a bookmark.
+	 *
+	 * @return void
+	 * @since
+	 */
+	public function get_raw_data_for_bookmarks() {
+
+		// Ensure we have a response, bail otherwise.
+		if ( false === $this->llm_response ) {
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( __FILE__, __LINE__, 'No LLM Response' ), true ), FILE_APPEND ); // phpcs:ignore
+			return;
+		}
+
+		// Convert the LLM response into a usable array.
+		$llm_response_as_array = $this->convert_llm_response_to_array();
+
+		// Score must be higher than this for it to make it into the bookmarks
+		$threshold_score = $this->get_threshold_score();
+
+		$usable_data = array();
+
+		// Now combine the LLM response, with our links. Only add if the link meets the threshold.
+		foreach ( $this->links as $lid => $link ) {
+
+			$this_links_score = $this->convert_score_out_of_10_to_integer( $llm_response_as_array[ $lid ]['score'] );
+
+			if ( $this_links_score < $threshold_score ) {
+				continue;
+			}
+
+			// Link score meets threshold, so add it to the array of bookmarks we should make.
+			$usable_data[] = array(
+				'title'      => $link['title'],
+				'url'        => $link['url'],
+				'excerpt'    => $link['excerpt'],
+				'score'      => $this_links_score,
+				'category'   => $llm_response_as_array[ $lid ]['category'],
+				'confidence' => $llm_response_as_array[ $lid ]['confidence'],
+			);
+
+		}
+
+		return $usable_data;
+
+	}//end get_raw_data_for_bookmarks()
+
+
+	/**
+	 * Convert the llm response string to a usable array which we're then able
+	 * to compared against the links we fetched.
+	 *
+	 * Converts:
+	 * Post 1 :: Score 2/10 :: Confidence 80% :: Category None
+	 * Post 2 :: Score 2/10 :: Confidence 70% :: Category Legal
+	 *
+	 * Into:
+	 * array(
+	 *     0 => array(
+	 *         'post_id' => 1,
+	 *         'score' => 2/10,
+	 *         'confidence' => 80%,
+	 *         'category' => 'none'
+	 *     ),
+	 *     1 => array(
+	 *         'post_id' => 2,
+	 *         'score' => 2/10,
+	 *         'confidence' => 70%,
+	 *         'category' => 'Legal'
+	 *     ),
+	 * )
+	 *
+	 * Note the ID of the items is the array isn't the same as the post_id because the LLM spits out
+	 * posts starting at 1, not 0.
+	 *
+	 * @return array each item is a line of the response, with each subarray containing the score, confidence, and category
+	 * @since
+	 */
+	public function convert_llm_response_to_array() {
+
+		$lines_of_response = preg_split( "/\r\n|\n|\r/", $this->llm_response );
+
+		$usable_array = array();
+
+		foreach ( $lines_of_response as $lineid => $line_text ) {
+
+			// Ensure this is a scored line, i.e. no other details.
+			if ( substr( $line_text, 0, 5 ) !== "Post " ) {
+				continue;
+			}
+
+			// Split by the :: delimiter and create usable variables for each of the parts.
+			list( $post_id, $score, $confidence, $category ) = explode( ' :: ', $line_text );
+
+			// trim the unnecessary fat
+			$post_id    = trim( str_replace( 'Post ', '', $post_id ) );
+			$score      = trim( str_replace( 'Score ', '', $score ) );
+			$confidence = trim( str_replace( 'Confidence ', '', $confidence ) );
+			$category   = trim( str_replace( 'Category ', '', $category ) );
+
+			$article_number = absint( $post_id ) - 1;
+
+			$usable_array[ $article_number ] = array(
+				'post_id'    => $post_id,
+				'score'      => $score,
+				'confidence' => $confidence,
+				'category'   => $category
+			);
+
+		}
+
+		return $usable_array;
+
+	}//end convert_llm_response_to_array()
+
+
+	/**
+	 * Convert a score of something like 5/10 or 9/10 (i.e. x/10) to an integer
+	 * so that we can then set a threshold and compare.
+	 *
+	 * @param  string $score the score to convert to an int
+	 *
+	 * @return int
+	 * @since 3.0.1
+	 */
+	public function convert_score_out_of_10_to_integer( $score ) {
+
+		$score = trim( $score ); // 5/10
+
+		list( $rating, $denominator ) = explode( '/', $score ); // $rating = 5; $denominator = 10;
+
+		$rating = absint( $rating ); // 5
+
+		return $rating;
+
+	}//end convert_score_out_of_10_to_integer()
+
+
+	/**
+	 * The minimum threshold score
+	 *
+	 * @return int
+	 * @since 3.0.1
+	 */
+	public function get_threshold_score() {
+		return absint( get_option('socratic_minimum_threshold_score') );
+	}//end get_threshold_score()
 
 }

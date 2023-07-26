@@ -1,6 +1,15 @@
 <?php
 /**
- * Class Socrates_LLM_Chat_Gpt
+ * Class Socrates_LLM_Chat_Gpt.
+ *
+ * Must implement:
+ *
+ * get_client()
+ * get_request()
+ * make_request()
+ * get_response_string()
+ *
+ * @todo Make this into an abstract class
  *
  * @package UBC\CTLT
  */
@@ -99,12 +108,42 @@ class Socrates_LLM_Chat_Gpt {
 	 */
 	public function make_request( $client, $request ) {
 
-		file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'about to make request', $request ), true ), FILE_APPEND ); // phpcs:ignore
-
 		$data = $client->chat()->create( $request );
 
 		return $data;
 
 	}//end make_request()
+
+
+	/**
+	 * The response from the LLM contains lots of stuff we don't need.
+	 * Just return the response string.
+	 *
+	 * @param  array $llm_response_data
+	 *
+	 * @return string Just the response string
+	 * @since 3.0.1
+	 */
+	public function get_response_string( $llm_response_data ) {
+
+		$link_scores = false;
+
+		foreach ( $llm_response_data->choices as $result ) {
+			// Only want the last response, I THINK.
+			if ( ! isset ( $result->finishReason ) || 'stop' !== $result->finishReason ) {
+				continue;
+			}
+
+			$link_scores = $result->message->content;
+		}
+
+		if ( false === $link_scores ) {
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Link scores are false.' ), true ), FILE_APPEND ); // phpcs:ignore
+			return 'Error: ' . __FILE__ . ' :: ' . __LINE__;
+		}
+
+		return $link_scores;
+
+	}//end get_response_string()
 
 }

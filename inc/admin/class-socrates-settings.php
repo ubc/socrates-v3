@@ -84,6 +84,10 @@ class Socrates_Settings {
 			'sanitize_callback' => array( $this, 'sanitize_categories' )
 		) );
 
+		register_setting( 'socrates_feed_settings', 'socratic_minimum_threshold_score', array(
+			'sanitize_callback' => 'absint'
+		) );
+
 		register_setting( 'socrates_feed_settings', 'socratic_email_cadence', array(
 			'sanitize_callback' => 'sanitize_text_field'
 		) );
@@ -307,6 +311,11 @@ class Socrates_Settings {
 							</div>
 							<button type="button" id="add-category">Add Category</button>
 						</td>
+					</tr>
+					<!-- Threshold Score field -->
+					<tr>
+						<th scope="row"><label for="socratic_minimum_threshold_score">Threshold Score</label></th>
+						<td><input type="text" id="socratic_minimum_threshold_score" name="socratic_minimum_threshold_score" class="regular-text" value="<?php echo esc_attr( get_option( 'socratic_minimum_threshold_score' ) ); ?>"></td>
 					</tr>
 					<!-- E-mail Cadence field -->
 					<tr>
