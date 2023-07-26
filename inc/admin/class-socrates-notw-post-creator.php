@@ -57,6 +57,11 @@ class Socrates_Notw_Post_Creator {
 	var $post_type = '';
 
 	/**
+	 * Will be filled with the post ID of the newly created NotW Post
+	 */
+	var $newly_created_post_id = false;
+
+	/**
 	 * Initialize ourselves.
 	 *
 	 * @return void
@@ -414,6 +419,12 @@ class Socrates_Notw_Post_Creator {
 		// Create the post.
 		$new_post_id = wp_insert_post( $insert_post_args );
 
+		if ( ! $new_post_id ) {
+			return;
+		}
+
+		$this->newly_created_post_id = $new_post_id;
+
 	}//end create_post()
 
 
@@ -459,6 +470,25 @@ class Socrates_Notw_Post_Creator {
 	 */
 	public function change_link_visibility() {
 
+		$links_to_adjust = $this->links;
+
+		foreach ( $links_to_adjust as $lcid => $links_cat_array ) {
+
+			if ( ! is_array( $links_cat_array ) || empty ( $links_cat_array ) ) {
+				continue;
+			}
+
+			foreach ( $links_cat_array as $lid => $link ) {
+				$update_link_args = array(
+					'link_id'      => $link['link_id'],
+					'link_visible' => 'Y',
+				);
+
+				wp_update_link( $update_link_args );
+			}
+
+		}
+
 	}//end change_link_visibility()
 
 
@@ -473,8 +503,5 @@ class Socrates_Notw_Post_Creator {
 	public function send_email_to_admin() {
 
 	}//end send_email_to_admin()
-
-
-
 
 }
