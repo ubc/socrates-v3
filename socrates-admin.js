@@ -35,6 +35,8 @@ document.addEventListener( 'DOMContentLoaded', function() {
                 console.error( 'AJAX error: ' + this.status );
             }
 
+			console.log( 'ok?' );
+			console.log( this.response );
             fetchDataButton.disabled = false;
             spinner.style.display = 'none';
         };
@@ -43,6 +45,8 @@ document.addEventListener( 'DOMContentLoaded', function() {
 			if (this.status >= 200 && this.status < 400) {
 				// Success!
 				document.getElementById('data-container').innerHTML += this.response;
+				console.log( 'ok2?' );
+				console.log( this.response );
 			} else {
 				// Error :(
 				console.error('AJAX error: ' + this.status);
@@ -76,10 +80,10 @@ document.addEventListener( 'DOMContentLoaded', function() {
         newRow.classList.add( 'feed-row' );
         newRow.innerHTML = `
             <label for="feed-url-${index}">Feed URL</label>
-            <input type="text" id="feed-url-${index}" name="socratic_feeds[${index}][url]">
+            <input type="text" class="regular-text" style="margin-right: 2em;" id="feed-url-${index}" name="socratic_feeds[${index}][url]">
             <label for="feed-weight-${index}">Weight</label>
-            <input type="text" id="feed-weight-${index}" name="socratic_feeds[${index}][weight]">
-            <button type="button" class="delete-feed">Delete</button>
+            <input type="text" class="small-text" id="feed-weight-${index}" name="socratic_feeds[${index}][weight]">
+            <button type="button" class="delete-feed button button-secondary dashicons dashicons-no" style="min-width: 32px;"></button>
         `;
 
         feedsContainer.appendChild( newRow );
@@ -87,6 +91,7 @@ document.addEventListener( 'DOMContentLoaded', function() {
 
     // Delete a feed
     feedsContainer.addEventListener( 'click', function(e) {
+		console.log( [e, e.target] );
         if ( e.target.classList.contains( 'delete-feed' ) ) {
             e.target.parentNode.remove();
         }
@@ -108,9 +113,9 @@ document.addEventListener( 'DOMContentLoaded', function() {
 
         newRow.classList.add( 'category-row' );
         newRow.innerHTML = `
-            <label for="category-${index}">Content Category</label>
-            <input type="text" id="category-${index}" name="socratic_categories[${index}]">
-            <button type="button" class="delete-category">Remove Category</button>
+            <label for="category-${index}"></label>
+            <input type="text" class="regular-text" id="category-${index}" name="socratic_categories[${index}]">
+            <button type="button" class="delete-category button button-secondary dashicons dashicons-no" style="min-width: 32px;"></button>
         `;
 
         categoriesContainer.appendChild( newRow );

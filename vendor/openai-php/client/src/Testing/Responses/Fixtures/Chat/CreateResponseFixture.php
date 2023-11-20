@@ -15,6 +15,8 @@ final class CreateResponseFixture
                 'message' => [
                     'role' => 'assistant',
                     'content' => "\n\nHello there, this is a fake chat response.",
+                    'function_call' => null,
+                    'tool_calls' => [],
                 ],
                 'finish_reason' => 'stop',
             ],

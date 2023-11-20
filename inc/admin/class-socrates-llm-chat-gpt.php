@@ -73,7 +73,7 @@ class Socrates_LLM_Chat_Gpt {
 	 * Formulate the request we're going to send.
 	 *
 	 * @param  array $request_params
-	 * 				     'prompt' : the full prompt we'll send to the LLM
+	 * 				     'messages' : the full set of messages sent to ChatGPT
 	 *                   'model'  : the model we wish to use
 	 *                   This is filtered, so other data may be available.
 	 *
@@ -83,13 +83,8 @@ class Socrates_LLM_Chat_Gpt {
 	public function get_request( $request_params = array() ) {
 
 		$request = array(
-			'model' => $request_params['model'],
-			'messages' => array(
-				array(
-					'role'    => 'user',
-					'content' => $request_params['prompt'],
-				)
-			),
+			'model'    => $request_params['model'],
+			'messages' => $request_params['messages'],
 		);
 
 		return $request;
@@ -126,7 +121,7 @@ class Socrates_LLM_Chat_Gpt {
 	 */
 	public function get_response_string( $llm_response_data ) {
 
-		$link_scores = false;
+		$response_string = false;
 
 		foreach ( $llm_response_data->choices as $result ) {
 			// Only want the last response, I THINK.
@@ -134,15 +129,15 @@ class Socrates_LLM_Chat_Gpt {
 				continue;
 			}
 
-			$link_scores = $result->message->content;
+			$response_string = $result->message->content;
 		}
 
-		if ( false === $link_scores ) {
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Link scores are false.' ), true ), FILE_APPEND ); // phpcs:ignore
+		if ( false === $response_string ) {
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Response was false.' ), true ), FILE_APPEND ); // phpcs:ignore
 			return 'Error: ' . __FILE__ . ' :: ' . __LINE__;
 		}
 
-		return $link_scores;
+		return $response_string;
 
 	}//end get_response_string()
 

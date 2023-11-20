@@ -50,6 +50,10 @@ class ComposerStaticInit80c429f33c053118f26763ba7e80ea16
             'GuzzleHttp\\Promise\\' => 19,
             'GuzzleHttp\\' => 11,
         ),
+        'D' => 
+        array (
+            'DonatelloZa\\RakePlus\\' => 21,
+        ),
     );
 
     public static $prefixDirsPsr4 = array (
@@ -113,6 +117,10 @@ class ComposerStaticInit80c429f33c053118f26763ba7e80ea16
         'GuzzleHttp\\' => 
         array (
             0 => __DIR__ . '/..' . '/guzzlehttp/guzzle/src',
+        ),
+        'DonatelloZa\\RakePlus\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/donatello-za/rake-php-plus/src',
         ),
     );
 

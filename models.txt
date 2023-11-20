@@ -1,0 +1,555 @@
+Array
+(
+    [0] => Array
+        (
+            [id] => text-search-babbage-doc-001
+            [object] => model
+            [created] => 1651172509
+            [owned_by] => openai-dev
+        )
+
+    [1] => Array
+        (
+            [id] => gpt-3.5-turbo-16k-0613
+            [object] => model
+            [created] => 1685474247
+            [owned_by] => openai
+        )
+
+    [2] => Array
+        (
+            [id] => curie-search-query
+            [object] => model
+            [created] => 1651172509
+            [owned_by] => openai-dev
+        )
+
+    [3] => Array
+        (
+            [id] => gpt-3.5-turbo-16k
+            [object] => model
+            [created] => 1683758102
+            [owned_by] => openai-internal
+        )
+
+    [4] => Array
+        (
+            [id] => text-search-babbage-query-001
+            [object] => model
+            [created] => 1651172509
+            [owned_by] => openai-dev
+        )
+
+    [5] => Array
+        (
+            [id] => babbage
+            [object] => model
+            [created] => 1649358449
+            [owned_by] => openai
+        )
+
+    [6] => Array
+        (
+            [id] => babbage-search-query
+            [object] => model
+            [created] => 1651172509
+            [owned_by] => openai-dev
+        )
+
+    [7] => Array
+        (
+            [id] => text-babbage-001
+            [object] => model
+            [created] => 1649364043
+            [owned_by] => openai
+        )
+
+    [8] => Array
+        (
+            [id] => whisper-1
+            [object] => model
+            [created] => 1677532384
+            [owned_by] => openai-internal
+        )
+
+    [9] => Array
+        (
+            [id] => text-similarity-davinci-001
+            [object] => model
+            [created] => 1651172505
+            [owned_by] => openai-dev
+        )
+
+    [10] => Array
+        (
+            [id] => gpt-4-1106-preview
+            [object] => model
+            [created] => 1698957206
+            [owned_by] => system
+        )
+
+    [11] => Array
+        (
+            [id] => davinci-similarity
+            [object] => model
+            [created] => 1651172509
+            [owned_by] => openai-dev
+        )
+
+    [12] => Array
+        (
+            [id] => code-davinci-edit-001
+            [object] => model
+            [created] => 1649880484
+            [owned_by] => openai
+        )
+
+    [13] => Array
+        (
+            [id] => curie-similarity
+            [object] => model
+            [created] => 1651172510
+            [owned_by] => openai-dev
+        )
+
+    [14] => Array
+        (
+            [id] => babbage-search-document
+            [object] => model
+            [created] => 1651172510
+            [owned_by] => openai-dev
+        )
+
+    [15] => Array
+        (
+            [id] => curie-instruct-beta
+            [object] => model
+            [created] => 1649364042
+            [owned_by] => openai
+        )
+
+    [16] => Array
+        (
+            [id] => text-search-ada-doc-001
+            [object] => model
+            [created] => 1651172507
+            [owned_by] => openai-dev
+        )
+
+    [17] => Array
+        (
+            [id] => davinci-instruct-beta
+            [object] => model
+            [created] => 1649364042
+            [owned_by] => openai
+        )
+
+    [18] => Array
+        (
+            [id] => gpt-4
+            [object] => model
+            [created] => 1687882411
+            [owned_by] => openai
+        )
+
+    [19] => Array
+        (
+            [id] => text-similarity-babbage-001
+            [object] => model
+            [created] => 1651172505
+            [owned_by] => openai-dev
+        )
+
+    [20] => Array
+        (
+            [id] => text-search-davinci-doc-001
+            [object] => model
+            [created] => 1651172505
+            [owned_by] => openai-dev
+        )
+
+    [21] => Array
+        (
+            [id] => babbage-similarity
+            [object] => model
+            [created] => 1651172505
+            [owned_by] => openai-dev
+        )
+
+    [22] => Array
+        (
+            [id] => text-embedding-ada-002
+            [object] => model
+            [created] => 1671217299
+            [owned_by] => openai-internal
+        )
+
+    [23] => Array
+        (
+            [id] => davinci-search-query
+            [object] => model
+            [created] => 1651172505
+            [owned_by] => openai-dev
+        )
+
+    [24] => Array
+        (
+            [id] => gpt-4-vision-preview
+            [object] => model
+            [created] => 1698894917
+            [owned_by] => system
+        )
+
+    [25] => Array
+        (
+            [id] => text-similarity-curie-001
+            [object] => model
+            [created] => 1651172507
+            [owned_by] => openai-dev
+        )
+
+    [26] => Array
+        (
+            [id] => text-davinci-001
+            [object] => model
+            [created] => 1649364042
+            [owned_by] => openai
+        )
+
+    [27] => Array
+        (
+            [id] => text-search-davinci-query-001
+            [object] => model
+            [created] => 1651172505
+            [owned_by] => openai-dev
+        )
+
+    [28] => Array
+        (
+            [id] => ada-search-document
+            [object] => model
+            [created] => 1651172507
+            [owned_by] => openai-dev
+        )
+
+    [29] => Array
+        (
+            [id] => ada-code-search-code
+            [object] => model
+            [created] => 1651172505
+            [owned_by] => openai-dev
+        )
+
+    [30] => Array
+        (
+            [id] => babbage-002
+            [object] => model
+            [created] => 1692634615
+            [owned_by] => system
+        )
+
+    [31] => Array
+        (
+            [id] => davinci-002
+            [object] => model
+            [created] => 1692634301
+            [owned_by] => system
+        )
+
+    [32] => Array
+        (
+            [id] => tts-1
+            [object] => model
+            [created] => 1681940951
+            [owned_by] => openai-internal
+        )
+
+    [33] => Array
+        (
+            [id] => davinci-search-document
+            [object] => model
+            [created] => 1651172509
+            [owned_by] => openai-dev
+        )
+
+    [34] => Array
+        (
+            [id] => curie-search-document
+            [object] => model
+            [created] => 1651172508
+            [owned_by] => openai-dev
+        )
+
+    [35] => Array
+        (
+            [id] => babbage-code-search-code
+            [object] => model
+            [created] => 1651172509
+            [owned_by] => openai-dev
+        )
+
+    [36] => Array
+        (
+            [id] => gpt-3.5-turbo-1106
+            [object] => model
+            [created] => 1698959748
+            [owned_by] => system
+        )
+
+    [37] => Array
+        (
+            [id] => text-search-ada-query-001
+            [object] => model
+            [created] => 1651172505
+            [owned_by] => openai-dev
+        )
+
+    [38] => Array
+        (
+            [id] => code-search-ada-text-001
+            [object] => model
+            [created] => 1651172507
+            [owned_by] => openai-dev
+        )
+
+    [39] => Array
+        (
+            [id] => babbage-code-search-text
+            [object] => model
+            [created] => 1651172509
+            [owned_by] => openai-dev
+        )
+
+    [40] => Array
+        (
+            [id] => code-search-babbage-code-001
+            [object] => model
+            [created] => 1651172507
+            [owned_by] => openai-dev
+        )
+
+    [41] => Array
+        (
+            [id] => ada-search-query
+            [object] => model
+            [created] => 1651172505
+            [owned_by] => openai-dev
+        )
+
+    [42] => Array
+        (
+            [id] => ada-code-search-text
+            [object] => model
+            [created] => 1651172510
+            [owned_by] => openai-dev
+        )
+
+    [43] => Array
+        (
+            [id] => tts-1-hd
+            [object] => model
+            [created] => 1699046015
+            [owned_by] => system
+        )
+
+    [44] => Array
+        (
+            [id] => text-search-curie-query-001
+            [object] => model
+            [created] => 1651172509
+            [owned_by] => openai-dev
+        )
+
+    [45] => Array
+        (
+            [id] => text-davinci-002
+            [object] => model
+            [created] => 1649880484
+            [owned_by] => openai
+        )
+
+    [46] => Array
+        (
+            [id] => tts-1-1106
+            [object] => model
+            [created] => 1699053241
+            [owned_by] => system
+        )
+
+    [47] => Array
+        (
+            [id] => text-davinci-edit-001
+            [object] => model
+            [created] => 1649809179
+            [owned_by] => openai
+        )
+
+    [48] => Array
+        (
+            [id] => code-search-babbage-text-001
+            [object] => model
+            [created] => 1651172507
+            [owned_by] => openai-dev
+        )
+
+    [49] => Array
+        (
+            [id] => tts-1-hd-1106
+            [object] => model
+            [created] => 1699053533
+            [owned_by] => system
+        )
+
+    [50] => Array
+        (
+            [id] => gpt-3.5-turbo
+            [object] => model
+            [created] => 1677610602
+            [owned_by] => openai
+        )
+
+    [51] => Array
+        (
+            [id] => gpt-3.5-turbo-instruct-0914
+            [object] => model
+            [created] => 1694122472
+            [owned_by] => system
+        )
+
+    [52] => Array
+        (
+            [id] => ada
+            [object] => model
+            [created] => 1649357491
+            [owned_by] => openai
+        )
+
+    [53] => Array
+        (
+            [id] => text-ada-001
+            [object] => model
+            [created] => 1649364042
+            [owned_by] => openai
+        )
+
+    [54] => Array
+        (
+            [id] => ada-similarity
+            [object] => model
+            [created] => 1651172507
+            [owned_by] => openai-dev
+        )
+
+    [55] => Array
+        (
+            [id] => code-search-ada-code-001
+            [object] => model
+            [created] => 1651172507
+            [owned_by] => openai-dev
+        )
+
+    [56] => Array
+        (
+            [id] => text-similarity-ada-001
+            [object] => model
+            [created] => 1651172505
+            [owned_by] => openai-dev
+        )
+
+    [57] => Array
+        (
+            [id] => gpt-3.5-turbo-0301
+            [object] => model
+            [created] => 1677649963
+            [owned_by] => openai
+        )
+
+    [58] => Array
+        (
+            [id] => gpt-3.5-turbo-instruct
+            [object] => model
+            [created] => 1692901427
+            [owned_by] => system
+        )
+
+    [59] => Array
+        (
+            [id] => text-search-curie-doc-001
+            [object] => model
+            [created] => 1651172509
+            [owned_by] => openai-dev
+        )
+
+    [60] => Array
+        (
+            [id] => text-davinci-003
+            [object] => model
+            [created] => 1669599635
+            [owned_by] => openai-internal
+        )
+
+    [61] => Array
+        (
+            [id] => gpt-4-0613
+            [object] => model
+            [created] => 1686588896
+            [owned_by] => openai
+        )
+
+    [62] => Array
+        (
+            [id] => text-curie-001
+            [object] => model
+            [created] => 1649364043
+            [owned_by] => openai
+        )
+
+    [63] => Array
+        (
+            [id] => curie
+            [object] => model
+            [created] => 1649359874
+            [owned_by] => openai
+        )
+
+    [64] => Array
+        (
+            [id] => gpt-4-0314
+            [object] => model
+            [created] => 1687882410
+            [owned_by] => openai
+        )
+
+    [65] => Array
+        (
+            [id] => davinci
+            [object] => model
+            [created] => 1649359874
+            [owned_by] => openai
+        )
+
+    [66] => Array
+        (
+            [id] => dall-e-2
+            [object] => model
+            [created] => 1698798177
+            [owned_by] => system
+        )
+
+    [67] => Array
+        (
+            [id] => gpt-3.5-turbo-0613
+            [object] => model
+            [created] => 1686587434
+            [owned_by] => openai
+        )
+
+    [68] => Array
+        (
+            [id] => dall-e-3
+            [object] => model
+            [created] => 1698785189
+            [owned_by] => system
+        )
+
+)

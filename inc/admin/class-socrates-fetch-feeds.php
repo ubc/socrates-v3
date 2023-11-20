@@ -48,6 +48,11 @@ class Socrates_Fetch_Feeds {
 	 */
 	var $llm_response = false;
 
+	/**
+	 * The maximum number of articles to fetch per feed.
+	 */
+	var $max_articles_to_fetch_per_feed = 3;
+
     /**
      * Construct the plugin object.
 	 *
@@ -91,7 +96,7 @@ class Socrates_Fetch_Feeds {
 
 		// Grab all of the articles from the listed feeds.
 		foreach ( $this->socratic_feeds as $findex => $feed ) {
-			$this->fetch_articles_from_feed( esc_url( $feed['url'] ), 2 );
+			$this->fetch_articles_from_feed( esc_url( $feed['url'] ), $this->max_articles_to_fetch_per_feed );
 		}
 
 		// Now get the excerpt/content for each of these new articles.
@@ -255,7 +260,17 @@ class Socrates_Fetch_Feeds {
 			$prompt_text .= 'Categories to use: ' . $categories_string;
 		}
 
-		$this->prompt = $prompt_text;
+		// this isn't a conversation, so it's just one 'message' we send, but still have
+		// to formulate it as part of a conversation.
+		$messages = array(
+			array(
+				'role'    => 'user',
+				'content' => $prompt_text,
+			)
+		);
+
+		// $this->prompt = $prompt_text;
+		$this->prompt = $messages;
 
 	}//end generate_prompt()
 

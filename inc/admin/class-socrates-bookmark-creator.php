@@ -83,7 +83,8 @@ class Socrates_Bookmark_Creator {
 			$dupe_check = get_bookmarks(
 				array(
 					'limit' => 1,
-					'search' => $link_array['url']
+					'search' => $link_array['url'],
+					'hide_invisible' => 0,
 				)
 			);
 
@@ -124,13 +125,16 @@ class Socrates_Bookmark_Creator {
 
 			$category_id = $this->get_link_category_id( $article['category'] );
 
+			// $date_time = date( 'Y-m-d H:i:s' );
+
 			$bookmark_data = array(
 				'link_name'        => $article['title'],
 				'link_url'         => $article['url'],
 				'link_description' => $article['excerpt'],
 				'link_category'    => $category_id,
 				'link_rating'      => $article['score'],
-				'link_visible'     => 'N', // Visibility is used to determine whether it's been in the NotW yet or not.
+				'link_visible'     => 'N', // Visibility is used to determine whether it's been in the NotW yet or not.,
+				// 'link_updated'     => $date_time,
 			);
 
 			wp_insert_link( $bookmark_data );

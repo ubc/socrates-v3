@@ -112,6 +112,7 @@ class Socrates_Send_LLM_Request {
 			'gpt-3.5-turbo-0613' => '\UBC\CTLT\Socrates_LLM_Chat_Gpt',
 			'gpt-3.5-turbo'      => '\UBC\CTLT\Socrates_LLM_Chat_Gpt',
 			'gpt-3.5-turbo-16k'  => '\UBC\CTLT\Socrates_LLM_Chat_Gpt',
+			'gpt-4-1106-preview' => '\UBC\CTLT\Socrates_LLM_Chat_Gpt',
 			'gpt-4'              => '\UBC\CTLT\Socrates_LLM_Chat_Gpt',
 			'gpt-4-32k'          => '\UBC\CTLT\Socrates_LLM_Chat_Gpt',
 		);
@@ -195,8 +196,8 @@ class Socrates_Send_LLM_Request {
 	public function set_request() {
 
 		$request_params = array(
-			'prompt' => $this->prompt,
-			'model'  => $this->model,
+			'model'    => $this->model,
+			'messages' => $this->prompt
 		);
 
 		/**

@@ -115,10 +115,11 @@ class Socrates_Notw_Post_Creator {
 			}
 
 			$usable_bookmarks[$bookmark_object->term_id][] = array(
-				'link_id'   => $bookmark_object->link_id,
-				'link_url'  => $bookmark_object->link_url,
-				'link_name' => $bookmark_object->link_name,
-				'term_id'   => $bookmark_object->term_id,
+				'link_id'          => $bookmark_object->link_id,
+				'link_url'         => $bookmark_object->link_url,
+				'link_name'        => $bookmark_object->link_name,
+				'term_id'          => $bookmark_object->term_id,
+				'link_description' => $bookmark_object->link_description,
 			);
 		}
 
@@ -282,9 +283,11 @@ class Socrates_Notw_Post_Creator {
 
 		$link_list_content = $this->get_link_list_content_for_category( $link_cat );
 
-		$content = '';
+		$content = '<!-- wp:heading -->';
 
-		$content .= '<h2>' . $heading . '</h2>';
+		$content .= '<h2 class="wp-block-heading">' . $heading . '</h2>';
+
+		$content .= '<!-- /wp:heading -->';
 		$content .= $link_list_content;
 
 		return $content;
@@ -338,18 +341,31 @@ class Socrates_Notw_Post_Creator {
 
 		$links = $this->links[ $link_category_id ];
 
+		// If we are showing the desciption for each link.
+		// @TODO: Make this a setting
+		$show_link_desciption = true;
+
 		// Start fresh
-		$content = '<ul>';
+		$content = '<!-- wp:list -->';
+		$content .= '<ul>';
 
 		foreach ( $links as $lid => $link_array ) {
 
+			$content .= '<!-- wp:list-item -->';
 			$content .= "<li>";
-			$content .= "<a href='" . $link_array['link_url'] . "'>" . $link_array['link_name'] . "</a>";
+			$content .= "<a href='" . esc_url( $link_array['link_url'] ) . "'>" . esc_html( $link_array['link_name'] ) . "</a>";
+
+			if ( $show_link_desciption ) {
+				$content .= '<br />' . esc_html( $link_array['link_description'] );
+			}
+
 			$content .= "</li>";
+			$content .= '<!-- /wp:list-item -->';
 
 		}
 
-		$content .= "</ul>";
+		$content .= '</ul>';
+		$content .= '<!-- /wp:list -->';
 
 		return wp_kses_post( $content );
 
@@ -542,7 +558,7 @@ class Socrates_Notw_Post_Creator {
 
 		$post_edit_link = get_edit_post_link( $this->newly_created_post_id, '' );
 
-		$content = "Hi,\r\na new $status post has been created for news of the week. Please review it, you can do so at:\r\n\r\n";
+		$content = "Hi,\r\n\r\na new $status post has been created for news of the week. Please review it, you can do so at:\r\n\r\n";
 
 		$content .= $post_edit_link;
 
