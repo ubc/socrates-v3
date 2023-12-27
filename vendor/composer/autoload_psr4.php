@@ -22,4 +22,5 @@ return array(
     'GuzzleHttp\\Promise\\' => array($vendorDir . '/guzzlehttp/promises/src'),
     'GuzzleHttp\\' => array($vendorDir . '/guzzlehttp/guzzle/src'),
     'DonatelloZa\\RakePlus\\' => array($vendorDir . '/donatello-za/rake-php-plus/src'),
+    'Alle_AI\\Anthropic\\' => array($vendorDir . '/alle-ai/anthropic-api-php/src'),
 );

@@ -16,6 +16,10 @@
 
 namespace UBC\CTLT;
 
+// Used for testing if necessary.
+// use OpenAI\Testing\ClientFake;
+// use OpenAI\Responses\Chat\CreateResponse;
+
 /**
  * Socrates_LLM_Chat_Gpt Class.
  *
@@ -64,6 +68,26 @@ class Socrates_LLM_Chat_Gpt {
 
 		$client = \OpenAI::client( $this->api_key );
 
+		// $client = new ClientFake([
+		// 	CreateResponse::fake([
+		// 		'choices' => [
+		// 			[
+		// 				'text' => 'awesome!',
+		// 			],
+		// 		],
+		// 	]),
+		// ]);
+
+		// $client = new ClientFake([
+		// 	new \OpenAI\Exceptions\ErrorException([
+		// 		'message' => 'The server had an error processing your request. Sorry about that! You can retry your request,
+		//                    or contact us through our help center at fake.fakesite.come if you keep seeing this error.
+		//                    (Please include the request ID abcd1234efgh5678 in your email.)',
+		// 		'type' => 'invalid_request_error',
+		// 		'code' => null,
+		// 	])
+		// ]);
+
 		return $client;
 
 	}//end get_client()
@@ -103,9 +127,29 @@ class Socrates_LLM_Chat_Gpt {
 	 */
 	public function make_request( $client, $request ) {
 
-		$data = $client->chat()->create( $request );
+		try {
 
-		return $data;
+			$data = $client->chat()->create( $request );
+			return $data;
+
+		} catch ( \OpenAI\Exceptions\ErrorException $e ) {
+
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'API Error' => $e->getMessage() ), true ), FILE_APPEND ); // phpcs:ignore
+
+			return [
+				'error'   => true,
+				'message' => $e->getMessage()
+			];
+
+		} catch ( \Exception $e ) {
+
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Unexpected Error' => $e->getMessage() ), true ), FILE_APPEND ); // phpcs:ignore
+
+			return [
+				'error' => true,
+				'message' => 'An unexpected error occurred: ' . $e->getMessage()
+			];
+		}
 
 	}//end make_request()
 
@@ -122,6 +166,11 @@ class Socrates_LLM_Chat_Gpt {
 	public function get_response_string( $llm_response_data ) {
 
 		$response_string = false;
+
+		// Test if we have caught an error.
+		if ( is_array( $llm_response_data ) && isset( $llm_response_data['error'] ) && true === $llm_response_data['error'] ) {
+			return 'Error: ' . $llm_response_data['message'];
+		}
 
 		foreach ( $llm_response_data->choices as $result ) {
 			// Only want the last response, I THINK.

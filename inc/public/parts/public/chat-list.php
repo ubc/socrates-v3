@@ -10,6 +10,11 @@ $hide_links = absint( $hide_links );
 
 $new_chat_data = ( true === $new_chat ) ? 'data-new-socratic-chat="1"' : '';
 
+// Deleted?
+if ( array_key_exists( 'deleted', $socratic_chats[ $chat_id_to_load ] ) && false !== $socratic_chats[ $chat_id_to_load ]['deleted'] ) {
+	echo "<p class='socratic-chat-deleted'>This chat was marked as deleted by the user at: " . $socratic_chats[ $chat_id_to_load ]['deleted'] . "</p>";
+}
+
 ?>
 
 <ol class="socratic-chat" id="soc-<?php echo esc_attr( $chat_id_to_load ); ?>" data-chat-id="<?php echo esc_attr( $chat_id_to_load ); ?>" <?php echo $new_chat_data; ?>>
@@ -19,9 +24,8 @@ $new_chat_data = ( true === $new_chat ) ? 'data-new-socratic-chat="1"' : '';
 		<?php
 			// We don't show the initial prompt as that's the one that sets the rules/guard rails.
 			// @TODO: Make this an option.
+			if ( $message['role'] === 'user' && 0 !== $mkey ) :
 		?>
-
-		<?php if ( $message['role'] === 'user' && 0 !== $mkey ): ?>
 			<li><?php echo wp_kses_post( $message['content'] ); ?></li>
 		<?php endif; ?>
 

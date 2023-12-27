@@ -44,7 +44,7 @@ class Socrates_Settings {
 		}
 
 		add_options_page(
-			'Socratic Method Version 3 Settings',
+			'Socrates Settings',
 			'Socrates',
 			'manage_options',
 			'socrates',
@@ -81,11 +81,27 @@ class Socrates_Settings {
 
 
 		// LLM settings
+		register_setting( 'socrates_llm_settings', 'socratic_generative_ai_tool', array(
+			'sanitize_callback' => 'sanitize_text_field'
+		) );
+
 		register_setting( 'socrates_llm_settings', 'socratic_chatgpt_api_key', array(
 			'sanitize_callback' => 'sanitize_text_field'
 		) );
 
 		register_setting( 'socrates_llm_settings', 'socratic_chatgpt_model', array(
+			'sanitize_callback' => 'sanitize_text_field'
+		) );
+
+		register_setting( 'socrates_llm_settings', 'socratic_anthropic_api_key', array(
+			'sanitize_callback' => 'sanitize_text_field'
+		) );
+
+		register_setting( 'socrates_llm_settings', 'socratic_anthropic_model', array(
+			'sanitize_callback' => 'sanitize_text_field'
+		) );
+
+		register_setting( 'socrates_llm_settings', 'socratic_anthropic_model_version', array(
 			'sanitize_callback' => 'sanitize_text_field'
 		) );
 
@@ -156,7 +172,7 @@ class Socrates_Settings {
 
 		?>
 
-		<h1><?php _e( 'Socratic Method Version 3 Settings' ); ?></h1>
+		<h1><?php _e( 'Socrates Settings' ); ?></h1>
 
 		<!-- Display the tabs -->
 		<h2 class="nav-tab-wrapper">
@@ -175,9 +191,9 @@ class Socrates_Settings {
 
 			?>
 
-			<a href="?page=socrates&tab=socrates_settings" class="nav-tab <?php echo $active_tab == 'socrates_settings' ? 'nav-tab-active' : ''; ?>"><?php _e( 'Socrates Settings' ); ?></a>
-			<a href="?page=socrates&tab=news_of_the_week" class="nav-tab <?php echo $active_tab == 'news_of_the_week' ? 'nav-tab-active' : ''; ?>"><?php _e( 'News Of The Week Settings' ); ?></a>
-			<a href="?page=socrates&tab=llm_settings" class="nav-tab <?php echo $active_tab == 'llm_settings' ? 'nav-tab-active' : ''; ?>"><?php _e( 'LLM Settings' ); ?></a>
+			<a href="?page=socrates&tab=socrates_settings" class="nav-tab <?php echo $active_tab == 'socrates_settings' ? 'nav-tab-active' : ''; ?>"><?php _e( 'Socratic Method Settings' ); ?></a>
+			<a href="?page=socrates&tab=news_of_the_week" class="nav-tab <?php echo $active_tab == 'news_of_the_week' ? 'nav-tab-active' : ''; ?>"><?php _e( 'Source Material Settings' ); ?></a>
+			<a href="?page=socrates&tab=llm_settings" class="nav-tab <?php echo $active_tab == 'llm_settings' ? 'nav-tab-active' : ''; ?>"><?php _e( 'GenAI Settings' ); ?></a>
 
 			<?php
 
@@ -328,6 +344,29 @@ Your reply to this prompt should be the first question to ask the student, and t
 			<table class="form-table" role="presentation">
 				<tbody>
 					<tr>
+						<th scope="row"><label for="socratic_generative_ai_tool">GenerativeAI tool to use</label></th>
+						<td>
+							<select id="socratic_generative_ai_tool" name="socratic_generative_ai_tool">
+							<?php
+
+								$available_tools = array(
+									'chatgpt' => 'ChatGPT by OpenAI',
+									'claude' => 'Claude by Anthropic',
+								);
+
+								// Filter the tools so it's editable externally
+								$available_tools = apply_filters( 'socratic_generative_ai_tools', $available_tools );
+
+								$current_tool = get_option( 'socratic_generative_ai_tool', 'chatgpt' );
+								foreach ( $available_tools as $tool => $tool_name ) {
+									echo '<option value="' . esc_attr( $tool ) . '"' . selected( $current_tool, $tool, false ) . '>' . esc_html( $tool_name ) . '</option>';
+								}
+							?>
+							</select>
+						</td>
+					</tr>
+
+					<tr class="tool-settings chatgpt-settings">
 						<th scope="row"><label for="socratic_chatgpt_api_key">ChatGPT API Key</label></th>
 						<td>
 							<input type="text" id="socratic_chatgpt_api_key" name="socratic_chatgpt_api_key" class="regular-text" value="<?php echo esc_attr( get_option( 'socratic_chatgpt_api_key' ) ); ?>">
@@ -336,7 +375,7 @@ Your reply to this prompt should be the first question to ask the student, and t
 					</tr>
 					<!-- ChatGPT Model field -->
 
-					<tr>
+					<tr class="tool-settings chatgpt-settings">
 						<th scope="row"><label for="socratic_chatgpt_model">ChatGPT Model To Use</label></th>
 						<td>
 							<select id="socratic_chatgpt_model" name="socratic_chatgpt_model">
@@ -349,7 +388,7 @@ Your reply to this prompt should be the first question to ask the student, and t
 									'gpt-4'              => 'ChatGPT 4 with 8K Context $$$$',
 									'gpt-4-32k'          => 'ChatGPT 4 with 32K Context $$$$',
 								);
-								$current_model = get_option('socratic_chatgpt_model');
+								$current_model = get_option( 'socratic_chatgpt_model' );
 								foreach ( $models as $model => $model_name ) {
 									echo '<option value="' . esc_attr( $model ) . '"' . selected( $current_model, $model, false ) . '>' . esc_html( $model_name ) . '</option>';
 								}
@@ -358,6 +397,43 @@ Your reply to this prompt should be the first question to ask the student, and t
 							<p class="description">Note: Different models cost different amounts.</p>
 						</td>
 					</tr>
+
+					<tr class="tool-settings claude-settings">
+						<th scope="row"><label for="socratic_anthropic_api_key">Anthropic API Key</label></th>
+						<td>
+							<input type="text" id="socratic_anthropic_api_key" name="socratic_anthropic_api_key" class="regular-text" value="<?php echo esc_attr( get_option( 'socratic_anthropic_api_key' ) ); ?>">
+							<p class="description">You can create one from the <a href="https://console.anthropic.com/">Anthropic Console screen</a>.</p>
+						</td>
+					</tr>
+
+					<tr class="tool-settings claude-settings">
+						<th scope="row"><label for="socratic_anthropic_model">Anthropic Model To Use</label></th>
+						<td>
+							<select id="socratic_anthropic_model" name="socratic_anthropic_model">
+								<?php
+								$anthropic_models = array(
+									'claude-2'         => 'Claude 2.0 Latest $$',
+									'claude-instant-1' => 'Claude Instant 1.0 $',
+								);
+								$current_anthropic_model = get_option( 'socratic_anthropic_model' );
+								foreach ( $anthropic_models as $anthropic_model => $anthropic_model_name ) {
+									echo '<option value="' . esc_attr( $anthropic_model ) . '"' . selected( $current_anthropic_model, $anthropic_model, false ) . '>' . esc_html( $anthropic_model_name ) . '</option>';
+								}
+								?>
+							</select>
+							<p class="description">Note: Different models cost different amounts.</p>
+						</td>
+					</tr>
+
+					<tr class="tool-settings claude-settings">
+						<th scope="row"><label for="socratic_anthropic_model">Anthropic Model Version To Use</label></th>
+						<td>
+							<input type="text" id="socratic_anthropic_model_version" name="socratic_anthropic_model_version" class="regular-text" value="<?php echo esc_attr( get_option( 'socratic_anthropic_model_version' ) ); ?>">
+							<p class="description">i.e. 2023-06-01</p>
+						</td>
+					</tr>
+
+					<?php do_action( 'socrates_tab_output__llm_settings' ); ?>
 
 				</tbody>
 			</table>

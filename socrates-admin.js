@@ -182,3 +182,74 @@ document.addEventListener('DOMContentLoaded', function() {
 		xhr.send( params );
 	} );
 } );
+
+// Show and Hide the relevant LLM Settings based on which Tool the person has selected.
+document.addEventListener( 'DOMContentLoaded', function() {
+
+    var toolSelector = document.getElementById( 'socratic_generative_ai_tool' );
+
+	if ( ! toolSelector ) {
+		return;
+	}
+
+	var allToolSettings = document.querySelectorAll( '.tool-settings' );
+
+    var chatgptSettings = document.querySelectorAll( '.chatgpt-settings' );
+    var claudeSettings  = document.querySelectorAll( '.claude-settings' );
+
+	/**
+	 * Toggles the display of settings based on the selected AI tool.
+	 *
+	 * This function is responsible for dynamically showing or hiding the settings
+	 * rows related to the ChatGPT and Claude AI tools in the plugin's settings page.
+	 * It first hides all the settings rows for both tools and then displays only
+	 * the rows relevant to the currently selected AI tool in the 'GenerativeAI tool to use' dropdown.
+	 *
+	 * The function is designed to be called both on initial page load and in response
+	 * to changes in the selection of the dropdown. On page load, it sets up the initial
+	 * visibility state of the settings rows based on the saved or default value of the
+	 * dropdown. When the user changes the selection in the dropdown, this function is
+	 * triggered again to update the visibility of the settings rows accordingly.
+	 *
+	 * Usage:
+	 * - Called on DOMContentLoaded to set initial settings visibility.
+	 * - Bound to the 'change' event of the dropdown to update settings visibility on user interaction.
+	 *
+	 * Assumptions:
+	 * - The tool settings for each tool have a class of {tool-name}-settings i.e. 'chatgpt-settings'.
+	 *
+	 * Side effects:
+	 * - Directly modifies the `style.display` property of relevant HTML elements.
+	 *
+	 * @returns {void} This function does not return a value; it directly manipulates the DOM.
+	 */
+    function toggleSettings() {
+
+        var tool = toolSelector.value;
+
+        // Hide all settings first
+		allToolSettings.forEach( function( row ) {
+		  row.style.display = 'none';
+		} );
+
+		// The class of the tr will be {tool-name}-settings i.e. 'chatgpt-settings' so, formulate this class
+		// name based on the tool selected.
+		var settingsClass = '.' + tool + '-settings';
+
+		// Fetch all of the selected tools' settings
+		var selectedToolSettings = document.querySelectorAll( settingsClass );
+
+		// Now show only the relevant settings
+		selectedToolSettings.forEach( function( row ) {
+		    row.style.display = '';
+		} );
+
+    }
+
+    // Initial toggle on page load based on the current selection
+    toggleSettings();
+
+    // Event listener for changes in the dropdown
+    toolSelector.addEventListener( 'change', toggleSettings );
+
+} );

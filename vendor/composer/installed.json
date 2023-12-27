@@ -1,6 +1,60 @@
 {
     "packages": [
         {
+            "name": "alle-ai/anthropic-api-php",
+            "version": "1.2.2",
+            "version_normalized": "1.2.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Alle-AI/anthropic-api-php.git",
+                "reference": "c98f98428515267467aaf2747f63cd99ea602699"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Alle-AI/anthropic-api-php/zipball/c98f98428515267467aaf2747f63cd99ea602699",
+                "reference": "c98f98428515267467aaf2747f63cd99ea602699",
+                "shasum": ""
+            },
+            "require": {
+                "ext-curl": "*",
+                "php": "^7.4 || ^8.0"
+            },
+            "time": "2023-10-09T02:10:45+00:00",
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-4": {
+                    "Alle_AI\\Anthropic\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Dickson Agyei",
+                    "email": "dickson@alle-ai.com",
+                    "homepage": "https://www.linkedin.com/in/dickson-agyei-jnr/",
+                    "role": "Developer"
+                }
+            ],
+            "description": "A PHP library for interacting with Anthropic's API",
+            "homepage": "https://github.com/Alle-AI/anthropic-api-php",
+            "keywords": [
+                "alle-ai",
+                "anthropic",
+                "chatbot",
+                "claude",
+                "text-generation"
+            ],
+            "support": {
+                "issues": "https://github.com/Alle-AI/anthropic-api-php/issues",
+                "source": "https://github.com/Alle-AI/anthropic-api-php/tree/1.2.2"
+            },
+            "install-path": "../alle-ai/anthropic-api-php"
+        },
+        {
             "name": "donatello-za/rake-php-plus",
             "version": "v1.0.18",
             "version_normalized": "1.0.18.0",

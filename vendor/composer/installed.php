@@ -3,7 +3,7 @@
         'name' => '__root__',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '04a83ae298f4c891261ec373ef15c0e9cd2c80ce',
+        'reference' => '1664aea38c1db782d312d7594b8a7229f0e3631b',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,9 +13,18 @@
         '__root__' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '04a83ae298f4c891261ec373ef15c0e9cd2c80ce',
+            'reference' => '1664aea38c1db782d312d7594b8a7229f0e3631b',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'alle-ai/anthropic-api-php' => array(
+            'pretty_version' => '1.2.2',
+            'version' => '1.2.2.0',
+            'reference' => 'c98f98428515267467aaf2747f63cd99ea602699',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../alle-ai/anthropic-api-php',
             'aliases' => array(),
             'dev_requirement' => false,
         ),
@@ -139,8 +148,8 @@
         'psr/http-client-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
-                0 => '*',
-                1 => '1.0',
+                0 => '1.0',
+                1 => '*',
             ),
         ),
         'psr/http-factory' => array(

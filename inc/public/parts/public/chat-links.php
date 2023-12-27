@@ -9,8 +9,8 @@ if ( ! $links || ! is_array( $links ) || empty( $links ) ) {
 	return;
 }
 
-$links_premable = get_option( 'socratic_links_preamble', 'Here are some links which may help with your reply. You may choose to use them or not.' );
-$links_preamble = sanitize_text_field( $links_premable );
+$links_preamble = get_option( 'socratic_links_preamble', 'Here are some links which may help with your reply. You may choose to use them or not.' );
+$links_preamble = sanitize_text_field( $links_preamble );
 
 ?>
 

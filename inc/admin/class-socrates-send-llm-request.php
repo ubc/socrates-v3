@@ -15,6 +15,13 @@ namespace UBC\CTLT;
 class Socrates_Send_LLM_Request {
 
 	/**
+	 * Will be filled with the tool chosen in the settings.
+	 * @var string
+	 * @since 3.0.1
+	 */
+	var $tool = '';
+
+	/**
 	 * This will be filled with the model chosen in the settings.
 	 */
 	var $model = '';
@@ -73,13 +80,30 @@ class Socrates_Send_LLM_Request {
 
 	/**
 	 * Fetches the model saved in the settings and stores to class property.
+	 * This first looks for which tool is being used, and then gets the model for that tool.
 	 *
 	 * @return void
 	 * @since 3.0.1
 	 */
 	public function set_model() {
 
-		$this->model = esc_html( get_option( 'socratic_chatgpt_model' ) );
+		$tool = esc_html( get_option( 'socratic_generative_ai_tool' ) );
+
+		$this->tool = $tool;
+
+		// @todo: Allow the individual llm classes to set this.
+		switch ( $tool ) {
+
+			case 'claude':
+				$this->model = esc_html( get_option( 'socratic_anthropic_model' ) );
+				break;
+
+			case 'chatgpt':
+			default:
+				$this->model = esc_html( get_option( 'socratic_chatgpt_model' ) );
+				break;
+
+		}
 
 	}//end set_model()
 
@@ -108,6 +132,7 @@ class Socrates_Send_LLM_Request {
 	 */
 	public function set_client_class() {
 
+		// @todo: Allow the individual llm classes to set this.
 		$models_to_client_classes = array(
 			'gpt-3.5-turbo-0613' => '\UBC\CTLT\Socrates_LLM_Chat_Gpt',
 			'gpt-3.5-turbo'      => '\UBC\CTLT\Socrates_LLM_Chat_Gpt',
@@ -115,6 +140,8 @@ class Socrates_Send_LLM_Request {
 			'gpt-4-1106-preview' => '\UBC\CTLT\Socrates_LLM_Chat_Gpt',
 			'gpt-4'              => '\UBC\CTLT\Socrates_LLM_Chat_Gpt',
 			'gpt-4-32k'          => '\UBC\CTLT\Socrates_LLM_Chat_Gpt',
+			'claude-2'           => '\UBC\CTLT\Socrates_LLM_Claude',
+			'claude-instant-1'   => '\UBC\CTLT\Socrates_LLM_Claude',
 		);
 
 		/**
@@ -138,6 +165,7 @@ class Socrates_Send_LLM_Request {
 
 		$file_to_load_for_chosen_llm_class = array(
 			'\UBC\CTLT\Socrates_LLM_Chat_Gpt' => plugin_dir_path( __FILE__ ) . 'class-socrates-llm-chat-gpt.php',
+			'\UBC\CTLT\Socrates_LLM_Claude'   => plugin_dir_path( __FILE__ ) . 'class-socrates-llm-claude.php',
 		);
 
 		/**

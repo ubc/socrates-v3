@@ -64,7 +64,7 @@ class Socrates_Notw_Post_Creator {
 	/**
 	 * Initialize ourselves.
 	 *
-	 * @return void
+	 * @return int The post ID of the newly created NotW Post
 	 * @since 3.0.1
 	 */
 	public function __construct() {
@@ -78,6 +78,8 @@ class Socrates_Notw_Post_Creator {
 		$this->change_link_visibility();
 
 		$this->send_email_to_admin();
+
+		return $this->newly_created_post_id;
 
 	}//end __construct()
 

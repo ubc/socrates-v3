@@ -850,4 +850,69 @@ class Socrates_Helpers {
 
 	}//end show_error_message()
 
+
+	/**
+	 * A standalone static method to fetch feeds from the RSS URLs in the
+	 * settings.
+	 *
+	 * Usage: $feeds = \UBC\CTLT\Socrates_Helpers::fetch_feeds();
+	 *
+	 * @return array
+	 * @since 3.0.1
+	 */
+	public static function fetch_feeds() {
+
+		// Include the feed fetcher class file.
+		require_once UBC_SELFSOCV3_DIR . 'inc/admin/class-socrates-fetch-feeds.php';
+
+		// Initialize feed fetcher class.
+		$socrates_feeds = new \UBC\CTLT\Socrates_Fetch_Feeds();
+
+		return $socrates_feeds->output();
+
+	}//end fetch_feeds()
+
+	/**
+	 * A standalone static method to create the bookmarks from the passed categorized and scored links.
+	 *
+	 * Usage: $created_bookmarks = \UBC\CTLT\Socrates_Helpers::create_bookmarks( $categorized_and_scored_links );
+	 *
+	 * @param array $categorized_and_scored_links
+	 * @since 3.0.1
+	 * @return int Number of bookmarks created.
+	 */
+	public static function create_bookmarks( $categorized_and_scored_links ) {
+
+		// Include the bookmark creator class file.
+		require_once UBC_SELFSOCV3_DIR . 'inc/admin/class-socrates-bookmark-creator.php';
+
+		// Initialize bookmark creator class.
+		$socrates_bookmark_creator = new \UBC\CTLT\Socrates_Bookmark_Creator( $categorized_and_scored_links );
+
+		return count( $categorized_and_scored_links );
+
+	}//end create_bookmarks()
+
+
+	/**
+	 * A standalone static method to create the NotW post based on the unpublished links.
+	 *
+	 * Usage: $newly_created_post_id = \UBC\CTLT\Socrates_Helpers::create_notw_post_from_unpublished_links();
+	 *
+	 * @since 3.0.1
+	 * @return void
+	 */
+	public static function create_notw_post_from_unpublished_links() {
+
+		// Include the NotW post creator class file.
+		require_once UBC_SELFSOCV3_DIR . 'inc/admin/class-socrates-notw-post-creator.php';
+
+		// Initialize NotW post creator class.
+		$newly_created_post_id = new \UBC\CTLT\Socrates_Notw_Post_Creator();
+
+		return $newly_created_post_id;
+
+	}//end create_notw_post_from_unpublished_links()
+
+
 }//end class Socrates_Helpers

@@ -54,6 +54,10 @@ class ComposerStaticInit80c429f33c053118f26763ba7e80ea16
         array (
             'DonatelloZa\\RakePlus\\' => 21,
         ),
+        'A' => 
+        array (
+            'Alle_AI\\Anthropic\\' => 18,
+        ),
     );
 
     public static $prefixDirsPsr4 = array (
@@ -121,6 +125,10 @@ class ComposerStaticInit80c429f33c053118f26763ba7e80ea16
         'DonatelloZa\\RakePlus\\' => 
         array (
             0 => __DIR__ . '/..' . '/donatello-za/rake-php-plus/src',
+        ),
+        'Alle_AI\\Anthropic\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/alle-ai/anthropic-api-php/src',
         ),
     );
 

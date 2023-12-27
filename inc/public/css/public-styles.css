@@ -4,6 +4,15 @@
  * @package Socrates
  */
 
+:root {
+	--socratic-chat-icon-size: 35px;
+	--socratic-chat-icon-chat-gap: 2em;
+	--socratic-chat-icon-border-radius: 5px;
+	--socratic-chat-top-padding: 2em;
+	--socratic-color-destructive-action: #b32d2e;
+	--socratic-color-primary: #F7F6F0;
+}
+
  .socrates-container {
     display: flex;
     flex-direction: column-reverse;
@@ -41,6 +50,13 @@
 .soc-conv-and-details p {
 	margin-top: 0;
 	font-size: 0.9em;
+}
+
+.socratic-chat-deleted {
+	background: var(--socratic-color-destructive-action);
+	color: white;
+	padding: 0.5em 1em;
+	margin: 2em 0;
 }
 
 .socratic-list-of-chats {
@@ -183,14 +199,15 @@ button.socratic_button {
 }
 
 /* Add icon to submit button */
-button.socratic_button::before {
+button.socratic_button::before,
+a.socratic_button::before {
 	content: "";
 	display: inline-block;
     width: 16px;
     height: 16px;
 	background-repeat: no-repeat;
     background-size: contain;
-	margin-right: 8px;
+	margin-right: 6px;
 	position: relative;
 	top: 4px;
 }
@@ -201,6 +218,10 @@ button.socratic_submit::before {
 
 button.socratic_new_chat::before {
 	background-image: url("data:image/svg+xml, <svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='1' stroke-linecap='round' stroke-linejoin='round' class='feather feather-plus'><line x1='12' y1='5' x2='12' y2='19'></line><line x1='5' y1='12' x2='19' y2='12'></line></svg>");
+}
+
+#socratic_delete::before {
+	background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%23b32d2e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather feather-trash-2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>');
 }
 
 button.socratic_button:hover,
@@ -237,7 +258,7 @@ button.socratic_button:active {
 	position: absolute;
 	right: 0;
 	top: 1.5em;
-	color: #b32d2e;
+	color: var(--socratic-color-destructive-action);
 	text-decoration: none;
 	border-color: transparent;
 	box-shadow: none;
@@ -247,10 +268,14 @@ button.socratic_button:active {
 }
 
 .socratic_delete:hover {
-	background: #b32d2e;
+	background: var(--socratic-color-destructive-action);
 	color: #fff;
-	border-color: #b32d2e;
-	box-shadow: 0 0 0 1px #b32d2e;
+	border-color: var(--socratic-color-destructive-action);
+	box-shadow: 0 0 0 1px var(--socratic-color-destructive-action);
+}
+
+#socratic_delete:hover::before {
+	background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather feather-trash-2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>') !important;
 }
 
 /**
@@ -296,15 +321,6 @@ ul.socrates-links > li::before {
   margin-top: -2.25em;
 }
 
-/**
- * From chat-list
- */
- :root {
-	--socratic-chat-icon-size: 35px;
-	--socratic-chat-icon-chat-gap: 2em;
-	--socratic-chat-icon-border-radius: 5px;
-	--socratic-chat-top-padding: 2em;
-}
 /* Base styling for the ol element */
 ol.socratic-chat {
 	list-style-type: none; /* Remove default numbering */
@@ -313,7 +329,7 @@ ol.socratic-chat {
 }
 
 ol.socratic-chat > li:nth-child(odd) {
-	background: #F7F6F0;
+	background: var(--socratic-color-primary);
 }
 
 /* Add the icon for odd-numbered items */

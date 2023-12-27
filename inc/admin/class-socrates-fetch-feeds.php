@@ -89,7 +89,7 @@ class Socrates_Fetch_Feeds {
 	/**
 	 * Main method which fetches the feeds, categorizes them using an llm,
 	 *
-	 * @return void
+	 * @return array
 	 * @since 3.0.1
 	 */
 	public function output() {
@@ -319,8 +319,8 @@ class Socrates_Fetch_Feeds {
 	 * We need to compare the links we have gathered, with the response from the LLM.
 	 * If the score is above the minimum score threshold, we create a bookmark.
 	 *
-	 * @return void
-	 * @since
+	 * @return array
+	 * @since 3.0.1
 	 */
 	public function get_raw_data_for_bookmarks() {
 

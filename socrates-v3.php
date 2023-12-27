@@ -128,20 +128,13 @@ class SocratesV3 {
 			wp_die();
 		}
 
-		// Include the feed fetcher class file.
-		require_once plugin_dir_path( __FILE__ ) . 'inc/admin/class-socrates-fetch-feeds.php';
-
-		// Initialize feed fetcher class.
-		$socrates_feeds = new \UBC\CTLT\Socrates_Fetch_Feeds();
-
-		$categorized_and_scored_links = $socrates_feeds->output();
+		// Fetch the feeds and categorize them.
+		$categorized_and_scored_links = \UBC\CTLT\Socrates_Helpers::fetch_feeds();
 
 		// Now we need to use this to create bookmarks.
-		require_once plugin_dir_path( __FILE__ ) . 'inc/admin/class-socrates-bookmark-creator.php';
+		$created_bookmarks = \UBC\CTLT\Socrates_Helpers::create_bookmarks( $categorized_and_scored_links );
 
-		$bookmark_class = new Socrates_Bookmark_Creator( $categorized_and_scored_links );
-
-		echo count( $categorized_and_scored_links ) . " link(s) fetched.";
+		echo $created_bookmarks . " link(s) fetched.";
 
 		wp_die();
 
@@ -162,14 +155,9 @@ class SocratesV3 {
 			wp_die();
 		}
 
-		require_once plugin_dir_path( __FILE__ ) . 'inc/admin/class-socrates-notw-post-creator.php';
+		$newly_created_post_id = \UBC\CTLT\Socrates_Helpers::create_notw_post_from_unpublished_links();
 
-		$notw_post_creator = new \UBC\CTLT\Socrates_Notw_Post_Creator();
-
-		// Return the string "Post Created."
-		echo 'Post Created.';
-
-		wp_die(); // All ajax handlers should die when finished
+		wp_die();
 
 	}//end wp_ajax_create_notw_post__create_notw_post()
 
@@ -198,7 +186,7 @@ class SocratesV3 {
 	 */
 	function socrates_enqueue_front_end_chat_scripts() {
 
-		wp_enqueue_script( 'socrates-ajax-script', plugin_dir_url( __FILE__ ) . 'inc/public/js/socrates-ajax.js', array('jquery'), '1.0.0', true );
+		wp_enqueue_script( 'socrates-ajax-script', plugin_dir_url( __FILE__ ) . 'inc/public/js/socrates-ajax.js', array( 'jquery' ), '1.0.0', true );
 
 		wp_localize_script( 'socrates-ajax-script', 'socratesAjax', array(
 			'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
@@ -218,7 +206,7 @@ class SocratesV3 {
 	function socrates_handle_chat_ajax() {
 
 		// Check nonce for security
-		if ( ! isset($_POST['nonce']) || ! wp_verify_nonce( $_POST['nonce'], 'socrates_nonce' ) ) {
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'socrates_nonce' ) ) {
 			wp_send_json_error( array( 'message' => 'E00: Nonce verification failed. Please reload the page and try again. You may need to sign in again, if applicable.' ) );
 		}
 
@@ -288,6 +276,12 @@ class SocratesV3 {
 		// If the response is empty, after validation, return an error.
 		if ( empty( $llm_response_string ) ) {
 			wp_send_json_error( array( 'message' => 'E05. Response is empty. Please reload and try again.' ) );
+		}
+
+		// If the $llm_response_string starts with 'Error: ', it's an error so send a json_error
+		// This can happen if the LLM returns an error such as the API being down for example.
+		if ( strpos( $llm_response_string, 'Error: ' ) === 0 ) {
+			wp_send_json_error( array( 'message' => $llm_response_string ) );
 		}
 
 		// If this is the user's 1st actual reply, we need to set it as the summary.
@@ -460,5 +454,15 @@ class SocratesV3 {
 
 }//end class
 
-global $ctlt_socrates;
-$ctlt_socrates = new SocratesV3();
+// Instantiate ourselves as early as possible.
+add_action( 'plugins_loaded', __NAMESPACE__ . '\\plugins_loaded__instantiate_socrates_v3' );
+
+function plugins_loaded__instantiate_socrates_v3() {
+
+	global $ctlt_socrates;
+	$ctlt_socrates = new SocratesV3();
+
+	do_action( 'socrates_v3_loaded' );
+
+}//end plugins_loaded__instantiate_socrates_v3
+
