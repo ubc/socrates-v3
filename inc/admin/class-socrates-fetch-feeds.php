@@ -7,9 +7,9 @@
 
 namespace UBC\CTLT;
 
-use \andreskrey\Readability\Readability;
-use \andreskrey\Readability\Configuration;
-use \andreskrey\Readability\ParseException;
+use andreskrey\Readability\Readability;
+use andreskrey\Readability\Configuration;
+use andreskrey\Readability\ParseException;
 
 /**
  * Socrates_Fetch_Feeds Class.
@@ -21,11 +21,15 @@ class Socrates_Fetch_Feeds {
 	/**
 	 * Will be filled with the Feeds that the site admin has added to their
 	 * socrates settings under Feed Settings.
+	 *
+	 * @var array
 	 */
 	var $socratic_feeds = array();
 
 	/**
 	 * Will be filled with the fetched articles.
+	 *
+	 * @var array
 	 */
 	var $articles = array();
 
@@ -33,37 +37,43 @@ class Socrates_Fetch_Feeds {
 	 * Will be filled with links that we're creating. Different from
 	 * $articles in so far that these are guaranteed to be unique and
 	 * not  in our database so far. And this list will be used to get
-	 * details from the LLM
+	 * details from the LLM.
+	 *
+	 * @var array
 	 */
 	var $links = array();
 
 	/**
 	 * Will be filled with the prompt. This will be a combination of the
 	 * starting prompt from the settings, and the titles/excerpts.
+	 *
+	 * @var string
 	 */
 	var $prompt = '';
 
 	/**
 	 * Will be filled with the raw response from the LLM
+	 *
+	 * @var bool|string
 	 */
 	var $llm_response = false;
 
 	/**
 	 * The maximum number of articles to fetch per feed.
+	 *
+	 * @var int
 	 */
 	var $max_articles_to_fetch_per_feed = 3;
 
-    /**
-     * Construct the plugin object.
+	/**
+	 * Construct the plugin object.
 	 *
 	 * @return void
 	 * @since 3.0.1
-     */
-    public function __construct() {
-
+	 */
+	public function __construct() {
 		$this->set_feeds();
-
-    }//end __construct()
+	}//end __construct()
 
 
 	/**
@@ -82,7 +92,6 @@ class Socrates_Fetch_Feeds {
 		}
 
 		$this->socratic_feeds = $socratic_feeds;
-
 	}//end set_feeds()
 
 
@@ -104,7 +113,7 @@ class Socrates_Fetch_Feeds {
 			$this->fetch_article_content_and_excerpt( $unique_article['link'] );
 		}
 
-		// Now generate the prompt we'll send to the LLM
+		// Now generate the prompt we'll send to the LLM.
 		$this->generate_prompt();
 
 		// Now hit the LLM to get the category, and rating for each link.
@@ -112,7 +121,6 @@ class Socrates_Fetch_Feeds {
 
 		// Now we get the usable data and return it.
 		return $this->get_raw_data_for_bookmarks();
-
 	}//end output()
 
 
@@ -120,7 +128,7 @@ class Socrates_Fetch_Feeds {
 	 * Fetch the most recent articles from the passed feed.
 	 *
 	 * @param  string $feed_url The URL of the feed to fetch.
-	 * @param  int $article_count the number of articles to fetch from this feed.
+	 * @param  int    $article_count the number of articles to fetch from this feed.
 	 *
 	 * @return void
 	 * @since 3.0.1
@@ -137,18 +145,20 @@ class Socrates_Fetch_Feeds {
 		$max_items = $feed->get_item_quantity( absint( $article_count ) );
 		$rss_items = $feed->get_items( 0, $max_items );
 
-		$articles = [];
+		$articles = array();
 
 		foreach ( $rss_items as $item ) {
 
 			$title = esc_attr( $item->get_title() );
 			$link  = esc_url( $item->get_permalink() );
 
-			$this_article = array( 'title' => $title, 'link' => $link );
+			$this_article = array(
+				'title' => $title,
+				'link'  => $link,
+			);
 			$this->update_articles_list( $this_article );
 
 		}
-
 	}//end fetch_articles_from_feed()
 
 
@@ -165,7 +175,6 @@ class Socrates_Fetch_Feeds {
 		$current_articles[] = $article_to_add;
 
 		$this->articles = $current_articles;
-
 	}//end update_articles_list()
 
 	/**
@@ -212,7 +221,6 @@ class Socrates_Fetch_Feeds {
 
 		// We know we have a new link. Add this to our class property.
 		$this->update_link_list( $new_link_data );
-
 	}//end fetch_article_content_and_excerpt()
 
 
@@ -229,7 +237,6 @@ class Socrates_Fetch_Feeds {
 		$current_links[] = $link_to_add;
 
 		$this->links = $current_links;
-
 	}//end update_link_list()
 
 
@@ -247,7 +254,7 @@ class Socrates_Fetch_Feeds {
 		$prompt_text = $this->get_starting_prompt();
 
 		foreach ( $this->links as $lid => $link_data ) {
-			$prompt_text .= 'post: ' . $lid+1 . "\r\n";
+			$prompt_text .= 'post: ' . $lid + 1 . "\r\n";
 			$prompt_text .= 'title: ' . $link_data['title'] . "\r\n";
 			$prompt_text .= 'excerpt: ' . $link_data['excerpt'] . "\r\n";
 			$prompt_text .= "\r\n";
@@ -266,12 +273,11 @@ class Socrates_Fetch_Feeds {
 			array(
 				'role'    => 'user',
 				'content' => $prompt_text,
-			)
+			),
 		);
 
 		// $this->prompt = $prompt_text;
 		$this->prompt = $messages;
-
 	}//end generate_prompt()
 
 
@@ -311,7 +317,6 @@ class Socrates_Fetch_Feeds {
 		... etc
 		*/
 		$this->llm_response = $data;
-
 	}//end use_llm_to_categorize_and_rate_links()
 
 
@@ -360,7 +365,6 @@ class Socrates_Fetch_Feeds {
 		}
 
 		return $usable_data;
-
 	}//end get_raw_data_for_bookmarks()
 
 
@@ -403,7 +407,7 @@ class Socrates_Fetch_Feeds {
 		foreach ( $lines_of_response as $lineid => $line_text ) {
 
 			// Ensure this is a scored line, i.e. no other details.
-			if ( substr( $line_text, 0, 5 ) !== "Post " ) {
+			if ( substr( $line_text, 0, 5 ) !== 'Post ' ) {
 				continue;
 			}
 
@@ -422,13 +426,12 @@ class Socrates_Fetch_Feeds {
 				'post_id'    => $post_id,
 				'score'      => $score,
 				'confidence' => $confidence,
-				'category'   => $category
+				'category'   => $category,
 			);
 
 		}
 
 		return $usable_array;
-
 	}//end convert_llm_response_to_array()
 
 
@@ -450,7 +453,6 @@ class Socrates_Fetch_Feeds {
 		$rating = absint( $rating ); // 5
 
 		return $rating;
-
 	}//end convert_score_out_of_10_to_integer()
 
 
@@ -461,7 +463,7 @@ class Socrates_Fetch_Feeds {
 	 * @since 3.0.1
 	 */
 	public function get_threshold_score() {
-		return absint( get_option('socratic_minimum_threshold_score') );
+		return absint( get_option( 'socratic_minimum_threshold_score' ) );
 	}//end get_threshold_score()
 
 
@@ -480,7 +482,6 @@ class Socrates_Fetch_Feeds {
 		}
 
 		return $categories;
-
 	}//end get_content_categories()
 
 
@@ -494,7 +495,5 @@ class Socrates_Fetch_Feeds {
 	public function get_content_categories_as_string() {
 
 		return implode( ', ', $this->get_content_categories() );
-
 	}//end get_content_categories_as_string()
-
 }

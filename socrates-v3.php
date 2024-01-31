@@ -26,7 +26,7 @@ namespace UBC\CTLT;
 
 // Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+	exit;
 }
 
 require_once __DIR__ . '/vendor/autoload.php';
@@ -36,7 +36,7 @@ use DonatelloZa\RakePlus\RakePlus;
 // Register a constant that we can use as the base bath for this plugin.
 define( 'UBC_SELFSOCV3_DIR', plugin_dir_path( __FILE__ ) );
 
-// Now register one to be usable as a web-addressable URL
+// Now register one to be usable as a web-addressable URL.
 define( 'UBC_SELFSOCV3_URL', plugin_dir_url( __FILE__ ) );
 
 require_once UBC_SELFSOCV3_DIR . 'inc/public/class-socrates-helpers.php';
@@ -60,10 +60,10 @@ class SocratesV3 {
 		// Initialize everything for the admin.
 		add_action( 'init', array( $this, 'init__admin_setup' ), 1 );
 
-		// AJAX handler to fetch feeds
+		// AJAX handler to fetch feeds.
 		add_action( 'wp_ajax_fetch_feeds', array( $this, 'wp_ajax_fetch_feeds__fetch_feeds_loader' ) );
 
-		// AJAX Handler to create NOTW Post
+		// AJAX Handler to create NOTW Post.
 		add_action( 'wp_ajax_create_notw_post', array( $this, 'wp_ajax_create_notw_post__create_notw_post' ) );
 
 		// Register the block and participant class.
@@ -82,7 +82,6 @@ class SocratesV3 {
 
 		// Log the models available to us from ChatGPT.
 		add_action( 'admin_init', array( $this, 'ubc_ctlt_socrates_quick_check' ) );
-
 	}//end __construct()
 
 
@@ -109,7 +108,6 @@ class SocratesV3 {
 
 		// Initialize admin list view class.
 		$socrates_admin_list_view = new \UBC\CTLT\Socrates_Admin_List_View();
-
 	}//end init__admin_setup()
 
 
@@ -122,7 +120,7 @@ class SocratesV3 {
 	 */
 	public function wp_ajax_fetch_feeds__fetch_feeds_loader() {
 
-		// Check for nonce security
+		// Check for nonce security.
 		if ( ! check_ajax_referer( 'socrates_nonce', 'nonce', false ) ) {
 			echo 'Nonce check failed!';
 			wp_die();
@@ -134,10 +132,9 @@ class SocratesV3 {
 		// Now we need to use this to create bookmarks.
 		$created_bookmarks = \UBC\CTLT\Socrates_Helpers::create_bookmarks( $categorized_and_scored_links );
 
-		echo $created_bookmarks . " link(s) fetched.";
+		echo $created_bookmarks . ' link(s) fetched.';
 
 		wp_die();
-
 	}//end wp_ajax_fetch_feeds__fetch_feeds_loader()
 
 
@@ -149,7 +146,7 @@ class SocratesV3 {
 	 */
 	public function wp_ajax_create_notw_post__create_notw_post() {
 
-		// Check for nonce security
+		// Check for nonce security.
 		if ( ! check_ajax_referer( 'socrates_nonce', 'nonce', false ) ) {
 			echo 'Nonce check failed!';
 			wp_die();
@@ -158,7 +155,6 @@ class SocratesV3 {
 		$newly_created_post_id = \UBC\CTLT\Socrates_Helpers::create_notw_post_from_unpublished_links();
 
 		wp_die();
-
 	}//end wp_ajax_create_notw_post__create_notw_post()
 
 	/**
@@ -174,7 +170,6 @@ class SocratesV3 {
 		$socrates_participant_chat = new \UBC\CTLT\Socrates_Participant_Chat();
 
 		$this->socrates_participant_chat = $socrates_participant_chat;
-
 	}//end after_setup_theme__register_participant_chat_block()
 
 
@@ -184,17 +179,20 @@ class SocratesV3 {
 	 * @return void
 	 * @since 3.0.1
 	 */
-	function socrates_enqueue_front_end_chat_scripts() {
+	public function socrates_enqueue_front_end_chat_scripts() {
 
 		wp_enqueue_script( 'socrates-ajax-script', plugin_dir_url( __FILE__ ) . 'inc/public/js/socrates-ajax.js', array( 'jquery' ), '1.0.0', true );
 
-		wp_localize_script( 'socrates-ajax-script', 'socratesAjax', array(
-			'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
-			'nonce'        => wp_create_nonce( 'socrates_nonce' ),
-			'thinkingText' => __( 'Thinking...', 'socrates-v3' ),
-		) );
-
-	}// end socrates_enqueue_front_end_chat_scripts()
+		wp_localize_script(
+			'socrates-ajax-script',
+			'socratesAjax',
+			array(
+				'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
+				'nonce'        => wp_create_nonce( 'socrates_nonce' ),
+				'thinkingText' => __( 'Thinking...', 'socrates-v3' ),
+			)
+		);
+	}//end socrates_enqueue_front_end_chat_scripts()
 
 
 	/**
@@ -203,14 +201,14 @@ class SocratesV3 {
 	 * @return void
 	 * @since 3.0.1
 	 */
-	function socrates_handle_chat_ajax() {
+	public function socrates_handle_chat_ajax() {
 
-		// Check nonce for security
+		// Check nonce for security.
 		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'socrates_nonce' ) ) {
 			wp_send_json_error( array( 'message' => 'E00: Nonce verification failed. Please reload the page and try again. You may need to sign in again, if applicable.' ) );
 		}
 
-		// Sanitize input
+		// Sanitize input.
 		$reply = wp_kses_post( $_POST['reply'] );
 
 		// If reply fails validation, or is now empty, return an error.
@@ -236,7 +234,7 @@ class SocratesV3 {
 
 		// Set up the empty state.
 		if ( ! $chats ) {
-			$chats = array();
+			$chats             = array();
 			$chats[ $chat_id ] = \UBC\CTLT\Socrates_Helpers::socrates_generate_starting_meta_state( $chat_id );
 		}
 
@@ -262,7 +260,7 @@ class SocratesV3 {
 		// Add this to the conversation; send to LLM, Add to User Meta.
 		require_once plugin_dir_path( __FILE__ ) . 'inc/admin/class-socrates-send-llm-request.php';
 
-		// Send the prompt to the LLM
+		// Send the prompt to the LLM.
 		$request = new Socrates_Send_LLM_Request();
 		$request->set_prompt( $messages );
 		$request->send_request();
@@ -303,7 +301,7 @@ class SocratesV3 {
 
 		$chats[ $chat_id ]['messages'] = $messages;
 
-		$links_results = \UBC\CTLT\Socrates_Helpers::get_links_for_response( $llm_response_string );
+		$links_results  = \UBC\CTLT\Socrates_Helpers::get_links_for_response( $llm_response_string );
 		$links_for_html = $links_results['links_for_html'];
 		$link_ids       = $links_results['link_ids'];
 
@@ -323,8 +321,12 @@ class SocratesV3 {
 			wp_send_json_error( array( 'message' => 'E06. Failed to save this conversation. Please reload and try again.' ) );
 		}
 
-		wp_send_json_success( array( 'message' => $response, 'links' => $links_for_html ) );
-
+		wp_send_json_success(
+			array(
+				'message' => $response,
+				'links'   => $links_for_html,
+			)
+		);
 	}//end socrates_handle_chat_ajax()
 
 
@@ -339,8 +341,8 @@ class SocratesV3 {
 	 */
 	public function socrates_delete_chat() {
 
-		// Check nonce for security
-		if ( ! isset($_POST['nonce']) || ! wp_verify_nonce( $_POST['nonce'], 'socrates_nonce' ) ) {
+		// Check nonce for security.
+		if ( ! isset( $_POST['nonce'] ) || ! wp_verify_nonce( $_POST['nonce'], 'socrates_nonce' ) ) {
 			wp_send_json_error( array( 'message' => 'E00: Nonce verification failed. Please reload the page and try deleting again. You may need to sign in again, if applicable.' ) );
 		}
 
@@ -382,7 +384,6 @@ class SocratesV3 {
 		}
 
 		wp_send_json_success( array( 'message' => 'Chat deleted.' ) );
-
 	}//end socrates_delete_chat()
 
 
@@ -398,7 +399,6 @@ class SocratesV3 {
 	 * It then checks if the 'llm-quick-check' GET parameter is present. If the
 	 * conditions are met, it calls a specific method from a class within the plugin.
 	 *
-	 *
 	 * @see https://developer.wordpress.org/reference/hooks/admin_init/
 	 * @see https://developer.wordpress.org/reference/functions/current_user_can/
 	 */
@@ -409,17 +409,17 @@ class SocratesV3 {
 			return;
 		}
 
-		// Log a list of the available ChatGPT models. ?llm-quick-check=models
+		// Log a list of the available ChatGPT models. ?llm-quick-check=models.
 		if ( isset( $_GET['llm-quick-check'] ) && sanitize_text_field( $_GET['llm-quick-check'] ) === 'models' ) {
 			\UBC\CTLT\Socrates_Helpers::socrates_get_chatgpt_models();
 		}
 
-		// Log a list of the available ChatGPT models. ?llm-quick-check=audio
+		// Log a list of the available ChatGPT models. ?llm-quick-check=audio.
 		if ( isset( $_GET['llm-quick-check'] ) && sanitize_text_field( $_GET['llm-quick-check'] ) === 'audio' ) {
 			\UBC\CTLT\Socrates_Helpers::socrates_get_audio_of_chat();
 		}
 
-		// Log an image from ChatGPT. ?llm-quick-check=image
+		// Log an image from ChatGPT. ?llm-quick-check=image.
 		if ( isset( $_GET['llm-quick-check'] ) && sanitize_text_field( $_GET['llm-quick-check'] ) === 'image' ) {
 
 			$image_prompt = 'First, summarize this conversation between Socrates the greek philsopher and a law student.
@@ -449,9 +449,7 @@ class SocratesV3 {
 			Do not output an introduction, prefix, preface, or conclusion. Only output the image prompt that you generate and nothing else.';
 			\UBC\CTLT\Socrates_Helpers::socrates_get_image_from_prompt( $image_prompt );
 		}
-
 	}//end ubc_ctlt_socrates_quick_check()
-
 }//end class
 
 // Instantiate ourselves as early as possible.
@@ -463,6 +461,4 @@ function plugins_loaded__instantiate_socrates_v3() {
 	$ctlt_socrates = new SocratesV3();
 
 	do_action( 'socrates_v3_loaded' );
-
-}//end plugins_loaded__instantiate_socrates_v3
-
+}//end plugins_loaded__instantiate_socrates_v3()
