@@ -282,7 +282,7 @@ class Socrates_Fetch_Feeds {
 	 * @since 3.0.1
 	 */
 	public function get_starting_prompt() {
-		return wp_kses_post( get_option( 'socratic_starting_prompt' ) );
+		return wp_kses_post( get_option( 'socratic_notw_starting_prompt' ) );
 	}//end get_starting_prompt()
 
 
