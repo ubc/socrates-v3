@@ -10,13 +10,13 @@
  *
  * @wordpress-plugin
  * Plugin Name:       Socrates v3
- * Plugin URI:        #
+ * Plugin URI:        https://github.com/ubc/socrates-v3/
  * Description:       v3 of the Socratic Method plugin which provides AI integration
  * Version:           3.0.1
  * Requires at least: 5.2
  * Requires PHP:      8.1
  * Author:            Rich Tape
- * Author URI:        #
+ * Author URI:        https://ctlt.ubc.ca/
  * Text Domain:       socrates-v3
  * License:           GPL v2 or later
  * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
