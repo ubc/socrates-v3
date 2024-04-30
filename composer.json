@@ -1,0 +1,19 @@
+{
+    "require": {
+        "openai-php/client": "^0.7.7",
+        "symfony/http-client": "^6.3",
+        "nyholm/psr7": "^1.8",
+        "guzzlehttp/guzzle": "^7.7",
+        "fivefilters/readability.php": "^1.0",
+        "donatello-za/rake-php-plus": "^1.0",
+        "alle-ai/anthropic-api-php": "^1.2"
+    },
+    "config": {
+        "allow-plugins": {
+            "php-http/discovery": true
+        }
+    },
+    "require-dev": {
+        "wp-coding-standards/wpcs": "^2.3"
+    }
+}
