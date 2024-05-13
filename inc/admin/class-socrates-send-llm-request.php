@@ -16,6 +16,7 @@ class Socrates_Send_LLM_Request {
 
 	/**
 	 * Will be filled with the tool chosen in the settings.
+	 *
 	 * @var string
 	 * @since 3.0.1
 	 */
@@ -74,7 +75,6 @@ class Socrates_Send_LLM_Request {
 		// set_prompt() is called from the code requesting something from an LLM.
 
 		// send_request() is then called from the code requesting something from an LLM
-
 	}//end __construct()
 
 
@@ -91,7 +91,16 @@ class Socrates_Send_LLM_Request {
 
 		$this->tool = $tool;
 
-		// @todo: Allow the individual llm classes to set this.
+		// This plugin supports two LLMs at this time. But add-ons can provide their own.
+		$model_name = apply_filters( 'socrates_v3_llm_model_name', false, $tool );
+
+		// If $model_name is not false, we use whatever the external plugin suggests is the model name.
+		if ( false !== $model_name ) {
+			$this->model = esc_html( get_option( $model_name ) );
+			return;
+		}
+
+		// Otherwise, it must be one of the two supported LLMs.
 		switch ( $tool ) {
 
 			case 'claude':
@@ -99,12 +108,14 @@ class Socrates_Send_LLM_Request {
 				break;
 
 			case 'chatgpt':
-			default:
 				$this->model = esc_html( get_option( 'socratic_chatgpt_model' ) );
 				break;
 
-		}
+			default:
+				$this->model = false;
+				break;
 
+		}
 	}//end set_model()
 
 
@@ -120,7 +131,6 @@ class Socrates_Send_LLM_Request {
 		$client = $this->client_class->get_client();
 
 		$this->client = $client;
-
 	}//end set_client()
 
 
@@ -194,10 +204,9 @@ class Socrates_Send_LLM_Request {
 		require_once $file_path;
 
 		// Now we have the class file loaded, we need to instantiate the class.
-		$client_class = new $class_to_load;
+		$client_class = new $class_to_load();
 
 		$this->client_class = $client_class;
-
 	}//end set_client_class()
 
 
@@ -211,7 +220,6 @@ class Socrates_Send_LLM_Request {
 	public function set_prompt( $prompt ) {
 
 		$this->prompt = $prompt;
-
 	}//end set_prompt()
 
 
@@ -225,7 +233,7 @@ class Socrates_Send_LLM_Request {
 
 		$request_params = array(
 			'model'    => $this->model,
-			'messages' => $this->prompt
+			'messages' => $this->prompt,
 		);
 
 		/**
@@ -244,7 +252,6 @@ class Socrates_Send_LLM_Request {
 
 		// Store this request locally.
 		$this->request = $request;
-
 	}//end set_request()
 
 
@@ -262,7 +269,6 @@ class Socrates_Send_LLM_Request {
 		$data = $this->client_class->make_request( $this->client, $this->request );
 
 		$this->llm_response_data = $data;
-
 	}//end send_request()
 
 
@@ -275,7 +281,6 @@ class Socrates_Send_LLM_Request {
 	public function get_llm_response_data() {
 
 		return $this->abstract_data_from_llm_response();
-
 	}//end get_llm_response_data()
 
 
@@ -288,7 +293,5 @@ class Socrates_Send_LLM_Request {
 	public function abstract_data_from_llm_response() {
 
 		return $this->client_class->get_response_string( $this->llm_response_data );
-
 	}//end abstract_data_from_llm_response()
-
 }
