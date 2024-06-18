@@ -32,5 +32,17 @@ Using this information and other knowledge you have of how the socratic method w
 
 Your role is of the person asking the questions. You should not answer those questions. So please only provide the questions, one by one. You do not need to give any introductory comments, just the questions. So, things such as "Certainly, let's begin..." etc. do not need to be part of your replies. Only ask the questions.
 
-Your reply to this prompt should be the first question to ask the student, and then subsequent replies will follow the above logic.
+Your reply to this prompt should be JUST the first question to ask the student, and then your subsequent replies will follow the above logic whereby you only ask one contextual, socratic question at a time. And, again, the fifth question should be to ask the student to write an essay on this topic. Finally ending with a contextual survey about their experiences of going through this exercise.
+```
+
+## Source Material Settings
+
+An example prompt for collecting source material:
+
+```
+Here are titles and excerpts for several blog posts. Rate each on a scale of 1-10 with how likely they are to discuss topics loosely connected to the video game industry, i-gaming, technology, digital media, and especially legal topics associated with any of those, with 1 being the least likely and 10 being most likely. Also give a confidence score for each of your ratings as a percentage, the more confident you are in giving the correct rating, the higher the percentage. Finally, for each, provide a category descriptor, i.e. if the post discusses video games, you should categorize the post as 'video games'. Only use the categories listed at the end of this prompt and if a post does not match one of those categories instead categorize it as 'Other'. It is VITAL that your response MUST use the following format, do NOT include anything else on each line:
+
+Post W :: Score X/10 :: Confidence Y% :: Category Z
+
+where W is the number of the post, X is your score out of 10, Y is your confidence percentage, and Z is the singular category that best describes the post. Do not write anything other than this for each post. Start each on a new line. Each new line MUST start with "Post W" where W is the number of the post followed by the remainder of the items. Do NOT write any introduction text explaining you know what the task is, ONLY write the information for each post.
 ```
