@@ -27,7 +27,6 @@ class Socrates_Settings {
 
 		// Load our JavaScript
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts__socrates_enqueue_admin_js' ) );
-
 	}
 
 	/**
@@ -38,7 +37,7 @@ class Socrates_Settings {
 	 */
 	public function admin_menu__socrates_admin_menu() {
 
-		// Only allow administrators to access this menu item
+		// Only allow administrators to access this menu item.
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
@@ -50,7 +49,6 @@ class Socrates_Settings {
 			'socrates',
 			array( $this, 'add_options_page__socrates_settings_page' )
 		);
-
 	}//end admin_menu__socrates_admin_menu()
 
 
@@ -62,82 +60,152 @@ class Socrates_Settings {
 	 */
 	public function admin_init__socrates_register_socrates_settings() {
 
-		// Socrates settings
-		register_setting( 'socrates_socrates_settings', 'socratic_socratic_starting_prompt', array(
-			'sanitize_callback' => array( $this, 'sanitize_llm_starting_prompt' )
-		) );
+		// Socrates settings.
+		register_setting(
+			'socrates_socrates_settings',
+			'socratic_socratic_starting_prompt',
+			array(
+				'sanitize_callback' => array( $this, 'sanitize_llm_starting_prompt' ),
+			)
+		);
 
-		register_setting( 'socrates_socrates_settings', 'socratic_socratic_initial_reply', array(
-			'sanitize_callback' => 'sanitize_text_field'
-		) );
+		register_setting(
+			'socrates_socrates_settings',
+			'socratic_socratic_initial_reply',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+			)
+		);
 
-		register_setting( 'socrates_socrates_settings', 'socratic_hide_links_in_reply', array(
-			'sanitize_callback' => array( $this, 'sanitize_checkbox' )
-		) );
+		register_setting(
+			'socrates_socrates_settings',
+			'socratic_hide_links_in_reply',
+			array(
+				'sanitize_callback' => array( $this, 'sanitize_checkbox' ),
+			)
+		);
 
-		register_setting( 'socrates_socrates_settings', 'socratic_links_preamble', array(
-			'sanitize_callback' => 'sanitize_text_field'
-		) );
+		register_setting(
+			'socrates_socrates_settings',
+			'socratic_links_preamble',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+			)
+		);
 
+		// LLM settings.
+		register_setting(
+			'socrates_llm_settings',
+			'socratic_generative_ai_tool',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+			)
+		);
 
-		// LLM settings
-		register_setting( 'socrates_llm_settings', 'socratic_generative_ai_tool', array(
-			'sanitize_callback' => 'sanitize_text_field'
-		) );
+		register_setting(
+			'socrates_llm_settings',
+			'socratic_chatgpt_api_key',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+			)
+		);
 
-		register_setting( 'socrates_llm_settings', 'socratic_chatgpt_api_key', array(
-			'sanitize_callback' => 'sanitize_text_field'
-		) );
+		register_setting(
+			'socrates_llm_settings',
+			'socratic_chatgpt_model',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+			)
+		);
 
-		register_setting( 'socrates_llm_settings', 'socratic_chatgpt_model', array(
-			'sanitize_callback' => 'sanitize_text_field'
-		) );
+		register_setting(
+			'socrates_llm_settings',
+			'socratic_anthropic_api_key',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+			)
+		);
 
-		register_setting( 'socrates_llm_settings', 'socratic_anthropic_api_key', array(
-			'sanitize_callback' => 'sanitize_text_field'
-		) );
+		register_setting(
+			'socrates_llm_settings',
+			'socratic_anthropic_model',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+			)
+		);
 
-		register_setting( 'socrates_llm_settings', 'socratic_anthropic_model', array(
-			'sanitize_callback' => 'sanitize_text_field'
-		) );
+		register_setting(
+			'socrates_llm_settings',
+			'socratic_anthropic_model_version',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+			)
+		);
 
-		register_setting( 'socrates_llm_settings', 'socratic_anthropic_model_version', array(
-			'sanitize_callback' => 'sanitize_text_field'
-		) );
+		// NOTW settings.
+		register_setting(
+			'socrates_notw_settings',
+			'socratic_notw_starting_prompt',
+			array(
+				'sanitize_callback' => array( $this, 'sanitize_llm_starting_prompt' ),
+			)
+		);
 
-		// NOTW settings
-		register_setting( 'socrates_notw_settings', 'socratic_notw_starting_prompt', array(
-			'sanitize_callback' => array( $this, 'sanitize_llm_starting_prompt' )
-		) );
+		register_setting(
+			'socrates_notw_settings',
+			'socratic_feeds',
+			array(
+				'sanitize_callback' => array( $this, 'sanitize_feeds' ),
+			)
+		);
 
-		register_setting( 'socrates_notw_settings', 'socratic_feeds', array(
-			'sanitize_callback' => array( $this, 'sanitize_feeds' )
-		) );
+		register_setting(
+			'socrates_notw_settings',
+			'socratic_categories',
+			array(
+				'sanitize_callback' => array( $this, 'sanitize_categories' ),
+			)
+		);
 
-		register_setting( 'socrates_notw_settings', 'socratic_categories', array(
-			'sanitize_callback' => array( $this, 'sanitize_categories' )
-		) );
+		register_setting(
+			'socrates_notw_settings',
+			'socratic_minimum_threshold_score',
+			array(
+				'sanitize_callback' => 'absint',
+			)
+		);
 
-		register_setting( 'socrates_notw_settings', 'socratic_minimum_threshold_score', array(
-			'sanitize_callback' => 'absint'
-		) );
+		register_setting(
+			'socrates_notw_settings',
+			'socratic_link_collection_cadence',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+			)
+		);
 
-		register_setting( 'socrates_notw_settings', 'socratic_link_collection_cadence', array(
-			'sanitize_callback' => 'sanitize_text_field'
-		) );
+		register_setting(
+			'socrates_notw_settings',
+			'socratic_notw_day',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+			)
+		);
 
-		register_setting( 'socrates_notw_settings', 'socratic_notw_day', array(
-			'sanitize_callback' => 'sanitize_text_field'
-		) );
+		register_setting(
+			'socrates_notw_settings',
+			'socratic_include_other_category_links',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+			)
+		);
 
-		register_setting( 'socrates_notw_settings', 'socratic_include_other_category_links', array(
-			'sanitize_callback' => 'sanitize_text_field',
-		) );
-
-		register_setting( 'socrates_notw_settings', 'socratic_notw_post_category', array(
-			'sanitize_callback' => 'absint',
-		) );
-
+		register_setting(
+			'socrates_notw_settings',
+			'socratic_notw_post_category',
+			array(
+				'sanitize_callback' => 'absint',
+			)
+		);
 
 		/**
 		 * Fires after the core settings for Socrates are registered.
@@ -154,7 +222,6 @@ class Socrates_Settings {
 		 * @hooked None by default.
 		 */
 		do_action( 'socrates_v3_after_register_core_settings' );
-
 	}//end admin_init__socrates_register_socrates_settings()
 
 
@@ -230,7 +297,6 @@ class Socrates_Settings {
 				break;
 
 		}
-
 	}//end add_options_page__socrates_settings_page()
 
 
@@ -271,7 +337,7 @@ Your reply to this prompt should be the first question to ask the student, and t
 
 			$default_initial_reply = 'Question 1: Name a digital world issue that interests you in 5 words or under.';
 
-?>
+			?>
 
 			<table class="form-table" role="presentation">
 				<tbody>
@@ -319,8 +385,6 @@ Your reply to this prompt should be the first question to ask the student, and t
 		</form>
 
 		<?php
-
-
 	}//end socrates_tab_output__socrates_settings()
 
 
@@ -351,7 +415,7 @@ Your reply to this prompt should be the first question to ask the student, and t
 
 								$available_tools = array(
 									'chatgpt' => 'ChatGPT by OpenAI',
-									'claude' => 'Claude by Anthropic',
+									'claude'  => 'Claude by Anthropic',
 								);
 
 								// Filter the tools so it's editable externally
@@ -361,7 +425,7 @@ Your reply to this prompt should be the first question to ask the student, and t
 								foreach ( $available_tools as $tool => $tool_name ) {
 									echo '<option value="' . esc_attr( $tool ) . '"' . selected( $current_tool, $tool, false ) . '>' . esc_html( $tool_name ) . '</option>';
 								}
-							?>
+								?>
 							</select>
 						</td>
 					</tr>
@@ -380,7 +444,7 @@ Your reply to this prompt should be the first question to ask the student, and t
 						<td>
 							<select id="socratic_chatgpt_model" name="socratic_chatgpt_model">
 								<?php
-								$models = array(
+								$models        = array(
 									'gpt-3.5-turbo-0613' => 'ChatGPT 3.5 Turbo 0613 (legacy) $$',
 									'gpt-3.5-turbo'      => 'ChatGPT 3.5 Turbo Latest $$',
 									'gpt-3.5-turbo-16k'  => 'ChatGPT 3.5 Turbo Latest with 16K Context $$$',
@@ -411,7 +475,7 @@ Your reply to this prompt should be the first question to ask the student, and t
 						<td>
 							<select id="socratic_anthropic_model" name="socratic_anthropic_model">
 								<?php
-								$anthropic_models = array(
+								$anthropic_models        = array(
 									'claude-2'         => 'Claude 2.0 Latest $$',
 									'claude-instant-1' => 'Claude Instant 1.0 $',
 								);
@@ -441,7 +505,6 @@ Your reply to this prompt should be the first question to ask the student, and t
 			<?php submit_button(); ?>
 		</form>
 		<?php
-
 	}//end socrates_tab_output__llm_settings()
 
 
@@ -460,15 +523,20 @@ Your reply to this prompt should be the first question to ask the student, and t
 			settings_fields( 'socrates_notw_settings' );
 			do_settings_sections( 'socrates_notw_settings' );
 
-			// Get the feeds data
+			// Get the feeds data.
 			$feeds = get_option( 'socratic_feeds' );
 			if ( ! $feeds ) {
-				$feeds = array( array( 'url' => '', 'weight' => '' ) );
+				$feeds = array(
+					array(
+						'url'    => '',
+						'weight' => '',
+					),
+				);
 			}
 
 			$default_notw_starting_prompt = "Here are titles and excerpts for some blog posts. Rate each on a scale of 1-10 with how likely they are to discuss topics loosely connected to the video game industry, i-gaming, technology, digital media, and especially legal topics associated with any of those, with 1 being the least likely and 10 being most likely. Also give a confidence score for each of your ratings as a percentage, the more confident you are in giving the correct rating, the higher the percentage. Finally, for each, provide a category descriptor, i.e. if the post discusses video games, you should categorize the post as 'video games'. Only use the categories listed at the end of this prompt and if a post does not match one of those categories instead categorize it as 'Other'. Your response should be in the format:\r\n\r\nPost W :: Score X/10 :: Confidence Y% :: Category Z\r\n\r\nwhere W is the number of the post, X is your score out of 10, Y is your confidence percentage, and Z is the singular category that best describes the post. Do not write anything other than this for each post. Start each on a new line.";
 
-			// Get the categories data
+			// Get the categories data.
 			$categories = get_option( 'socratic_categories' );
 			if ( ! $categories ) {
 				$categories = array( '' );
@@ -481,7 +549,7 @@ Your reply to this prompt should be the first question to ask the student, and t
 					<tr>
 						<th scope="row"><label for="starting-prompt">Starting Prompt</label></th>
 						<td>
-							<textarea id="starting-prompt" name="socratic_notw_starting_prompt" rows="13" class="large-text code" cols="50"><?php echo wp_kses_post( str_replace( array( '<br>', '<br/>', '<br />'), "\n", get_option( 'socratic_notw_starting_prompt', $default_notw_starting_prompt ) ) ); ?></textarea>
+							<textarea id="starting-prompt" name="socratic_notw_starting_prompt" rows="13" class="large-text code" cols="50"><?php echo wp_kses_post( str_replace( array( '<br>', '<br/>', '<br />' ), "\n", get_option( 'socratic_notw_starting_prompt', $default_notw_starting_prompt ) ) ); ?></textarea>
 							<p class="description">This is the prompt that is sent to the Large Language Model. The list of links to check and your chosen link categories will also be appended to this prompt.</p>
 						</td>
 					</tr>
@@ -491,7 +559,7 @@ Your reply to this prompt should be the first question to ask the student, and t
 						<td>
 							<select id="socratic_notw_day" name="socratic_notw_day">
 								<?php
-								$options = array( 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday',  );
+								$options        = array( 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' );
 								$current_option = get_option( 'socratic_notw_day' );
 								foreach ( $options as $option ) {
 									echo '<option value="' . esc_attr( $option ) . '"' . selected( $current_option, $option, false ) . '>' . esc_html( $option ) . '</option>';
@@ -507,11 +575,11 @@ Your reply to this prompt should be the first question to ask the student, and t
 						<td>
 							<?php
 								$notw_categories = $this->get_post_categories_for_notw_category();
-								$current_value = get_option( 'socratic_notw_post_category' );
+								$current_value   = get_option( 'socratic_notw_post_category' );
 								echo '<select name="socratic_notw_post_category" name="socratic_notw_post_category">';
-								foreach ( $notw_categories as $category ) {
-									echo '<option value="' . esc_attr( $category->term_id ) . '"' . selected( $category->term_id, $current_value, false ) . '>' . esc_html( $category->name ) . '</option>';
-								}
+							foreach ( $notw_categories as $category ) {
+								echo '<option value="' . esc_attr( $category->term_id ) . '"' . selected( $category->term_id, $current_value, false ) . '>' . esc_html( $category->name ) . '</option>';
+							}
 								echo '</select>';
 							?>
 							<p class="description">Into which category should the news of the week post be placed?</p>
@@ -523,9 +591,9 @@ Your reply to this prompt should be the first question to ask the student, and t
 						<td>
 							<?php
 								$include_other_cat = get_option( 'socratic_include_other_category_links' );
-								if ( ! $include_other_cat || empty( $include_other_cat ) ) {
-									$include_other_cat = 'no';
-								}
+							if ( ! $include_other_cat || empty( $include_other_cat ) ) {
+								$include_other_cat = 'no';
+							}
 							?>
 							<?php echo '<label><input type="radio" name="socratic_include_other_category_links" value="yes"' . checked( 'yes', $include_other_cat, false ) . '>Yes</label>'; ?>
 							<?php echo '<label><input type="radio" name="socratic_include_other_category_links" value="no"' . checked( 'no', $include_other_cat, false ) . '>No</label>'; ?>
@@ -540,12 +608,12 @@ Your reply to this prompt should be the first question to ask the student, and t
 						</th>
 						<td>
 							<div id="feeds-container">
-							<?php foreach ( $feeds as $index => $feed ): ?>
+							<?php foreach ( $feeds as $index => $feed ) : ?>
 								<div class="feed-row" style="margin-bottom: 0.5em;">
 									<label for="feed-url-<?php echo $index; ?>">Feed URL</label>
-									<input type="text" class="regular-text" style="margin-right: 2em;" id="feed-url-<?php echo $index; ?>" name="socratic_feeds[<?php echo $index; ?>][url]" value="<?php echo esc_url($feed['url']); ?>">
+									<input type="text" class="regular-text" style="margin-right: 2em;" id="feed-url-<?php echo $index; ?>" name="socratic_feeds[<?php echo $index; ?>][url]" value="<?php echo esc_url( $feed['url'] ); ?>">
 									<label for="feed-weight-<?php echo $index; ?>">Weight</label>
-									<input type="text" class="small-text" id="feed-weight-<?php echo $index; ?>" name="socratic_feeds[<?php echo $index; ?>][weight]" value="<?php echo esc_attr($feed['weight']); ?>">
+									<input type="text" class="small-text" id="feed-weight-<?php echo $index; ?>" name="socratic_feeds[<?php echo $index; ?>][weight]" value="<?php echo esc_attr( $feed['weight'] ); ?>">
 									<button type="button" style="min-width: 32px;" class="delete-feed button button-secondary dashicons dashicons-no"></button>
 								</div>
 							<?php endforeach; ?>
@@ -561,7 +629,7 @@ Your reply to this prompt should be the first question to ask the student, and t
 						</th>
 						<td>
 							<div id="categories-container">
-							<?php foreach ($categories as $index => $category): ?>
+							<?php foreach ( $categories as $index => $category ) : ?>
 								<div class="category-row" style="margin-bottom: 0.5em;">
 									<label for="category-<?php echo $index; ?>"></span></label>
 									<input type="text" class="regular-text" id="category-<?php echo $index; ?>" name="socratic_categories[<?php echo $index; ?>]" value="<?php echo esc_attr( $category ); ?>">
@@ -586,7 +654,7 @@ Your reply to this prompt should be the first question to ask the student, and t
 						<td>
 							<select id="link-collection-cadence" name="socratic_link_collection_cadence">
 								<?php
-								$options = array( 'Daily at Midnight', 'Every other day at Midnight', 'Every Sunday at Midnight' );
+								$options        = array( 'Daily at Midnight', 'Every other day at Midnight', 'Every Sunday at Midnight' );
 								$current_option = get_option( 'socratic_link_collection_cadence' );
 								foreach ( $options as $option ) {
 									echo '<option value="' . esc_attr( $option ) . '"' . selected( $current_option, $option, false ) . '>' . esc_html( $option ) . '</option>';
@@ -600,20 +668,24 @@ Your reply to this prompt should be the first question to ask the student, and t
 				</tbody>
 			</table>
 
-			<button id="fetch-data" type="button" class="button">Fetch Feeds</button>
+			<div class="manual-runs" style="padding: 0 1em 1em; margin-top: 2em; border: 1px solid #ccc;">
 
-			<div id="data-container"></div> <!-- This div will contain the fetched data -->
+				<h3>Demonstration Purposes Only: Manually Run Feeds/NOTW Post Creation</h3>
+				<p><button id="fetch-data" type="button" class="button">Fetch Feeds</button></p>
 
-			<button id="create-notw-post" type="button" class="button">Create NOTW Post</button>
+				<div id="data-container"></div> <!-- This div will contain the fetched data -->
 
-			<div id="notw-result"></div> <!-- This div will contain the fetched data -->
+				<p><button id="create-notw-post" type="button" class="button">Create NOTW Post</button></p>
 
-			<div id="spinner" style="display: none;"><span class="spinner is-active"></span></div>
+				<div id="notw-result"></div> <!-- This div will contain the fetched data -->
+
+				<div id="spinner" style="display: none;"><span class="spinner is-active"></span></div>
+
+			</div>
 
 			<?php submit_button(); ?>
 		</form>
 		<?php
-
 	}//end socrates_tab_output__notw_settings()
 
 
@@ -628,7 +700,7 @@ Your reply to this prompt should be the first question to ask the student, and t
 	public function sanitize_llm_starting_prompt( $prompt ) {
 		// Just sanitize, no need to convert line breaks to <br> tags.
 		return wp_kses_post( $prompt );
-	}// end sanitize_llm_starting_prompt()
+	}//end sanitize_llm_starting_prompt()
 
 
 	/**
@@ -641,7 +713,7 @@ Your reply to this prompt should be the first question to ask the student, and t
 	public function sanitize_checkbox( $input ) {
 		// If the checkbox has been checked, return 1, otherwise return 0.
 		return ( isset( $input ) && true == $input ) ? 1 : 0;
-	}// end sanitize_checkbox()
+	}//end sanitize_checkbox()
 
 
 	/**
@@ -655,12 +727,11 @@ Your reply to this prompt should be the first question to ask the student, and t
 	public function sanitize_feeds( $feeds ) {
 
 		foreach ( $feeds as $index => $feed ) {
-			$feeds[$index]['url']    = esc_url_raw( $feed['url'] );
-			$feeds[$index]['weight'] = sanitize_text_field( $feed['weight'] );
+			$feeds[ $index ]['url']    = esc_url_raw( $feed['url'] );
+			$feeds[ $index ]['weight'] = sanitize_text_field( $feed['weight'] );
 		}
 
 		return $feeds;
-
 	}//end sanitize_feeds()
 
 	/**
@@ -679,13 +750,14 @@ Your reply to this prompt should be the first question to ask the student, and t
 	 */
 	public function get_post_categories_for_notw_category() {
 
-		$categories = get_terms( array(
-			'taxonomy' => 'category',
-			'hide_empty' => false,
-		) );
+		$categories = get_terms(
+			array(
+				'taxonomy'   => 'category',
+				'hide_empty' => false,
+			)
+		);
 
 		return $categories;
-
 	}//end get_post_categories_for_notw_category()
 
 	/**
@@ -698,17 +770,19 @@ Your reply to this prompt should be the first question to ask the student, and t
 
 		wp_enqueue_script(
 			'socrates-admin',
-			plugins_url( '/socrates-admin.js', dirname( dirname( __FILE__ ) ) ),
+			plugins_url( '/socrates-admin.js', dirname( __DIR__ ) ),
 			array(),
 			'1.0',
 			true
 		);
 		// Create nonce
-		wp_localize_script( 'socrates-admin', 'socrates_obj', array(
-			'ajax_url' => admin_url( 'admin-ajax.php' ),
-			'nonce'    => wp_create_nonce( 'socrates_nonce' ),
-		));
-
+		wp_localize_script(
+			'socrates-admin',
+			'socrates_obj',
+			array(
+				'ajax_url' => admin_url( 'admin-ajax.php' ),
+				'nonce'    => wp_create_nonce( 'socrates_nonce' ),
+			)
+		);
 	}//end admin_enqueue_scripts__socrates_enqueue_admin_js()
-
 }

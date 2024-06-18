@@ -74,8 +74,8 @@ document.addEventListener( 'DOMContentLoaded', function() {
 
     // Add a new feed
     addFeedButton.addEventListener( 'click', function() {
-        let index = feedsContainer.children.length,
-            newRow = document.createElement( 'div' );
+        let index = feedsContainer.children.length + 1;
+        let newRow = document.createElement( 'div' );
 
         newRow.classList.add( 'feed-row' );
         newRow.innerHTML = `

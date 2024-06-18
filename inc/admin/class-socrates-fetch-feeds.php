@@ -208,11 +208,10 @@ class Socrates_Fetch_Feeds {
 				'url'     => $unique_article_url,
 				'title'   => $readability->getTitle(),
 				'excerpt' => $readability->getExcerpt(),
-				// 'content' => $readability->getContent()
 			);
 
 		} catch ( ParseException $e ) {
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( sprintf( 'Error processing text: %s on %s', $e->getMessage(), $article['link'] ), true ), FILE_APPEND ); // phpcs:ignore;
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( sprintf( 'Error processing text: %s on %s', $e->getMessage(), $unique_article_url ), true ), FILE_APPEND ); // phpcs:ignore;
 		}
 
 		if ( false === $new_link_data ) {
@@ -338,7 +337,7 @@ class Socrates_Fetch_Feeds {
 		// Convert the LLM response into a usable array.
 		$llm_response_as_array = $this->convert_llm_response_to_array();
 
-		// Score must be higher than this for it to make it into the bookmarks
+		// Score must be higher than this for it to make it into the bookmarks.
 		$threshold_score = $this->get_threshold_score();
 
 		$usable_data = array();
@@ -407,18 +406,19 @@ class Socrates_Fetch_Feeds {
 		foreach ( $lines_of_response as $lineid => $line_text ) {
 
 			// Ensure this is a scored line, i.e. no other details.
-			if ( substr( $line_text, 0, 5 ) !== 'Post ' ) {
+			// Use a regex to match lines starting with 'Post ' or 'post ' followed by an ID.
+			if ( ! preg_match( '/^post\s+\d+\s*::/i', $line_text ) ) {
 				continue;
 			}
 
 			// Split by the :: delimiter and create usable variables for each of the parts.
 			list( $post_id, $score, $confidence, $category ) = explode( ' :: ', $line_text );
 
-			// trim the unnecessary fat
-			$post_id    = trim( str_replace( 'Post ', '', $post_id ) );
-			$score      = trim( str_replace( 'Score ', '', $score ) );
-			$confidence = trim( str_replace( 'Confidence ', '', $confidence ) );
-			$category   = trim( str_replace( 'Category ', '', $category ) );
+			// trim the unnecessary fat.
+			$post_id    = trim( preg_replace( '/^post\s+/i', '', $post_id ) );
+			$score      = trim( preg_replace( '/^score\s+/i', '', $score ) );
+			$confidence = trim( preg_replace( '/^confidence\s+/i', '', $confidence ) );
+			$category   = trim( preg_replace( '/^category\s+/i', '', $category ) );
 
 			$article_number = absint( $post_id ) - 1;
 
