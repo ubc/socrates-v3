@@ -39,18 +39,19 @@ Please see the [Anthropic API documentation](https://console.anthropic.com/docs)
 
 Integrating **Anthropic's Claude Model** into your application is now as simple as a few lines of code:
 
-### Chat Completion using Claude (claude-2)
+### Chat Completion using Claude (claude-2.1)
 
 ```php
 require_once 'vendor/autoload.php'; // Include the Composer autoloader
 
 $api_key = 'your-anthropic-api-key';
+$anthropic_version = "2023-06-01";
 
-$anthropic_api = new Alle_AI\Anthropic\AnthropicAPI($api_key);
+$anthropic_api = new Alle_AI\Anthropic\AnthropicAPI($api_key, $anthropic_version);
 $prompt = "How many toes do dogs have?";
 $data = array(
-    'prompt' => '\n\nHuman: '.$prompt.'\n\nAssistant:', // Be sure to format prompt appropriately
-    'model' => 'claude-2',
+    'prompt' => "\n\nHuman: ".$prompt."\n\nAssistant:", // Be sure to format prompt appropriately
+    'model' => 'claude-2.1',
     'max_tokens_to_sample' => 300,
     'stop_sequences' => array("\n\nHuman:")
   );

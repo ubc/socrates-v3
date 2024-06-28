@@ -7,9 +7,9 @@
 
 namespace UBC\CTLT;
 
-use andreskrey\Readability\Readability;
-use andreskrey\Readability\Configuration;
-use andreskrey\Readability\ParseException;
+use Readability\Readability;
+use Readability\Configuration;
+use Readability\ParseException;
 
 /**
  * Socrates_Fetch_Feeds Class.
@@ -195,23 +195,23 @@ class Socrates_Fetch_Feeds {
 		$html = file_get_contents( $unique_article_url );
 
 		// Use readability to parse it.
-		$readability = new Readability( new Configuration() );
+		$readability = new Readability( $html, $unique_article_url, 'libxml', false );
 
 		// Start empty.
 		$new_link_data = false;
 
-		try {
+		$result = $readability->init();
 
-			$readability->parse( $html );
+		if ( $result ) {
 
 			$new_link_data = array(
 				'url'     => $unique_article_url,
-				'title'   => $readability->getTitle(),
-				'excerpt' => $readability->getExcerpt(),
+				'title'   => $readability->getTitle()->textContent,
+				'excerpt' => $readability->getContent()->textContent,
 			);
 
-		} catch ( ParseException $e ) {
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( sprintf( 'Error processing text: %s on %s', $e->getMessage(), $unique_article_url ), true ), FILE_APPEND ); // phpcs:ignore;
+		} else {
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( sprintf( 'Error processing text for %s', $unique_article_url ), true ), FILE_APPEND ); // phpcs:ignore;
 		}
 
 		if ( false === $new_link_data ) {
@@ -252,11 +252,15 @@ class Socrates_Fetch_Feeds {
 		// Add what is in the options as the starting prompt.
 		$prompt_text = $this->get_starting_prompt();
 
+		// Ensure the starting prompt ends with a new line.
+		$prompt_text .= "\r\n";
+		$prompt_text .= "--\r\n";
+
 		foreach ( $this->links as $lid => $link_data ) {
 			$prompt_text .= 'post: ' . $lid + 1 . "\r\n";
-			$prompt_text .= 'title: ' . $link_data['title'] . "\r\n";
-			$prompt_text .= 'excerpt: ' . $link_data['excerpt'] . "\r\n";
-			$prompt_text .= "\r\n";
+			$prompt_text .= 'title: ' . wp_trim_words( $link_data['title'], 20 ) . "\r\n";
+			$prompt_text .= 'excerpt: ' . wp_trim_words( $link_data['excerpt'], 50 ) . "\r\n";
+			$prompt_text .= "--\r\n";
 		}
 
 		// Now add the categories set in the options.
@@ -275,7 +279,6 @@ class Socrates_Fetch_Feeds {
 			),
 		);
 
-		// $this->prompt = $prompt_text;
 		$this->prompt = $messages;
 	}//end generate_prompt()
 
@@ -301,8 +304,9 @@ class Socrates_Fetch_Feeds {
 
 		require_once plugin_dir_path( __FILE__ ) . 'class-socrates-send-llm-request.php';
 
-		// Send the prompt to the LLM
+		// Send the prompt to the LLM.
 		$request = new Socrates_Send_LLM_Request();
+
 		$request->set_prompt( $this->prompt );
 		$request->send_request();
 

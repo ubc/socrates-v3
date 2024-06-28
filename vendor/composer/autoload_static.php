@@ -7,22 +7,22 @@ namespace Composer\Autoload;
 class ComposerStaticInit80c429f33c053118f26763ba7e80ea16
 {
     public static $files = array (
-        '7b11c4dc42b3b3023073cb14e519683c' => __DIR__ . '/..' . '/ralouphie/getallheaders/src/getallheaders.php',
         '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
+        '7b11c4dc42b3b3023073cb14e519683c' => __DIR__ . '/..' . '/ralouphie/getallheaders/src/getallheaders.php',
         '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
         '61ba3e92ef91a7a0f1cc260ebd9290e4' => __DIR__ . '/..' . '/openai-php/client/src/OpenAI.php',
     );
 
     public static $prefixLengthsPsr4 = array (
-        'a' => 
-        array (
-            'andreskrey\\Readability\\' => 23,
-        ),
         'S' => 
         array (
             'Symfony\\Contracts\\Service\\' => 26,
             'Symfony\\Contracts\\HttpClient\\' => 29,
             'Symfony\\Component\\HttpClient\\' => 29,
+        ),
+        'R' => 
+        array (
+            'Readability\\' => 12,
         ),
         'P' => 
         array (
@@ -38,6 +38,10 @@ class ComposerStaticInit80c429f33c053118f26763ba7e80ea16
         'N' => 
         array (
             'Nyholm\\Psr7\\' => 12,
+        ),
+        'M' => 
+        array (
+            'Masterminds\\' => 12,
         ),
         'H' => 
         array (
@@ -61,10 +65,6 @@ class ComposerStaticInit80c429f33c053118f26763ba7e80ea16
     );
 
     public static $prefixDirsPsr4 = array (
-        'andreskrey\\Readability\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/fivefilters/readability.php/src',
-        ),
         'Symfony\\Contracts\\Service\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/service-contracts',
@@ -77,14 +77,18 @@ class ComposerStaticInit80c429f33c053118f26763ba7e80ea16
         array (
             0 => __DIR__ . '/..' . '/symfony/http-client',
         ),
+        'Readability\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/j0k3r/php-readability/src',
+        ),
         'Psr\\Log\\' => 
         array (
-            0 => __DIR__ . '/..' . '/psr/log/Psr/Log',
+            0 => __DIR__ . '/..' . '/psr/log/src',
         ),
         'Psr\\Http\\Message\\' => 
         array (
-            0 => __DIR__ . '/..' . '/psr/http-factory/src',
-            1 => __DIR__ . '/..' . '/psr/http-message/src',
+            0 => __DIR__ . '/..' . '/psr/http-message/src',
+            1 => __DIR__ . '/..' . '/psr/http-factory/src',
         ),
         'Psr\\Http\\Client\\' => 
         array (
@@ -101,6 +105,10 @@ class ComposerStaticInit80c429f33c053118f26763ba7e80ea16
         'Nyholm\\Psr7\\' => 
         array (
             0 => __DIR__ . '/..' . '/nyholm/psr7/src',
+        ),
+        'Masterminds\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/masterminds/html5/src',
         ),
         'Http\\Message\\MultipartStream\\' => 
         array (
