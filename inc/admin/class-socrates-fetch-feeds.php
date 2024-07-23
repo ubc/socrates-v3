@@ -110,7 +110,7 @@ class Socrates_Fetch_Feeds {
 
 		// Now get the excerpt/content for each of these new articles.
 		foreach ( $this->articles as $aaindex => $unique_article ) {
-			$this->fetch_article_content_and_excerpt( $unique_article['link'] );
+			$this->fetch_article_content_and_excerpt( $unique_article['link'], $unique_article['guid'] );
 		}
 
 		// Now generate the prompt we'll send to the LLM.
@@ -151,10 +151,12 @@ class Socrates_Fetch_Feeds {
 
 			$title = esc_attr( $item->get_title() );
 			$link  = esc_url( $item->get_permalink() );
+			$guid  = esc_url( $item->get_id() );
 
 			$this_article = array(
 				'title' => $title,
 				'link'  => $link,
+				'guid'  => $guid,
 			);
 			$this->update_articles_list( $this_article );
 
@@ -182,17 +184,38 @@ class Socrates_Fetch_Feeds {
 	 * we add it, we'll go fetch the excerpt and content for it.
 	 *
 	 * @param  string $unique_article_url The URL of the article to grab.
+	 * @param  string $unique_article_guid The GUID of the article to use as a fallback.
 	 *
 	 * @return void
 	 * @since
 	 */
-	public function fetch_article_content_and_excerpt( $unique_article_url ) {
+	public function fetch_article_content_and_excerpt( $unique_article_url, $unique_article_guid = '' ) {
 
 		// Escape to stay safe.
 		$unique_article_url = esc_url( $unique_article_url );
 
-		// Fetch the full page's DOM.
+		// Try to fetch the full page's DOM.
 		$html = file_get_contents( $unique_article_url );
+
+		// If fetching from link fails, try GUID.
+		if ( false === $html && ! empty( $unique_article_guid ) ) {
+			$unique_article_guid = esc_url( $unique_article_guid );
+			$html                = file_get_contents( $unique_article_guid );
+			$unique_article_url  = $unique_article_guid; // Use GUID as URL if it works.
+		}
+
+		// One last try. If the URL contains &#038; it seems to break on some sites. So we'll try switching
+		// &#038; to just &.
+		if ( false === $html ) {
+			$unique_article_url = str_replace( '&#038;', '&', $unique_article_url );
+			$html               = file_get_contents( $unique_article_url );
+		}
+
+		// If still failed, log the error and return.
+		if ( false === $html ) {
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Error fetching content for: ', $unique_article_url ), true ), FILE_APPEND ); // phpcs:ignore
+			return;
+		}
 
 		// Use readability to parse it.
 		$readability = new Readability( $html, $unique_article_url, 'libxml', false );
@@ -211,17 +234,37 @@ class Socrates_Fetch_Feeds {
 			);
 
 		} else {
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( sprintf( 'Error processing text for %s', $unique_article_url ), true ), FILE_APPEND ); // phpcs:ignore;
+
+			$doc                     = new \DOMDocument();
+			$doc->substituteEntities = false; // phpcs:ignore
+			$content                 = mb_convert_encoding( $html, 'html-entities', 'utf-8' );
+
+			$doc->loadHTML( $content );
+			$html = $doc->saveHTML();
+
+			$readability = new Readability( $html, $unique_article_url, 'libxml', false );
+			$result      = $readability->init();
+
+			if ( $result ) {
+
+				$new_link_data = array(
+					'url'     => $unique_article_url,
+					'title'   => $readability->getTitle()->textContent,
+					'excerpt' => $readability->getContent()->textContent,
+				);
+
+			} else {
+				file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( sprintf( 'Retry failed. Error processing text for %s', $unique_article_url ), true ), FILE_APPEND ); // phpcs:ignore;
+			}
 		}
 
 		if ( false === $new_link_data ) {
-			return;
+				return;
 		}
 
 		// We know we have a new link. Add this to our class property.
 		$this->update_link_list( $new_link_data );
 	}//end fetch_article_content_and_excerpt()
-
 
 	/**
 	 * A method to add a link to the list of links.
@@ -237,7 +280,6 @@ class Socrates_Fetch_Feeds {
 
 		$this->links = $current_links;
 	}//end update_link_list()
-
 
 	/**
 	 * Generate our prompt which is a combination of the starting prompt
@@ -282,7 +324,6 @@ class Socrates_Fetch_Feeds {
 		$this->prompt = $messages;
 	}//end generate_prompt()
 
-
 	/**
 	 * Fetch and set the start of the prompt that is set in the settings.
 	 *
@@ -292,7 +333,6 @@ class Socrates_Fetch_Feeds {
 	public function get_starting_prompt() {
 		return wp_kses_post( get_option( 'socratic_notw_starting_prompt' ) );
 	}//end get_starting_prompt()
-
 
 	/**
 	 * Hit the chosen LLM
@@ -321,7 +361,6 @@ class Socrates_Fetch_Feeds {
 		*/
 		$this->llm_response = $data;
 	}//end use_llm_to_categorize_and_rate_links()
-
 
 	/**
 	 * We need to compare the links we have gathered, with the response from the LLM.
@@ -369,7 +408,6 @@ class Socrates_Fetch_Feeds {
 
 		return $usable_data;
 	}//end get_raw_data_for_bookmarks()
-
 
 	/**
 	 * Convert the llm response string to a usable array which we're then able
@@ -438,7 +476,6 @@ class Socrates_Fetch_Feeds {
 		return $usable_array;
 	}//end convert_llm_response_to_array()
 
-
 	/**
 	 * Convert a score of something like 5/10 or 9/10 (i.e. x/10) to an integer
 	 * so that we can then set a threshold and compare.
@@ -459,7 +496,6 @@ class Socrates_Fetch_Feeds {
 		return $rating;
 	}//end convert_score_out_of_10_to_integer()
 
-
 	/**
 	 * The minimum threshold score
 	 *
@@ -469,7 +505,6 @@ class Socrates_Fetch_Feeds {
 	public function get_threshold_score() {
 		return absint( get_option( 'socratic_minimum_threshold_score' ) );
 	}//end get_threshold_score()
-
 
 	/**
 	 * Fetches the categories stored in the settings
@@ -487,7 +522,6 @@ class Socrates_Fetch_Feeds {
 
 		return $categories;
 	}//end get_content_categories()
-
 
 	/**
 	 * Turns the array of categories stored in the settings into a

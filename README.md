@@ -40,9 +40,35 @@ Your reply to this prompt should be JUST the first question to ask the student, 
 An example prompt for collecting source material:
 
 ```
-Here are titles and excerpts for several blog posts. Rate each on a scale of 1-10 with how likely they are to discuss topics loosely connected to the video game industry, i-gaming, technology, digital media, and especially legal topics associated with any of those, with 1 being the least likely and 10 being most likely. Also give a confidence score for each of your ratings as a percentage, the more confident you are in giving the correct rating, the higher the percentage. Finally, for each, provide a category descriptor, i.e. if the post discusses video games, you should categorize the post as 'video games'. Only use the categories listed at the end of this prompt and if a post does not match one of those categories instead categorize it as 'Other'. It is VITAL that your response MUST use the following format, do NOT include anything else on each line:
+I need you to help me with a task. I have been given a series of blog post titles and excerpts and I need to determine how likely those blog posts are to discuss legal topics associated with a list of categories. I will provide to you all of the titles and excerpts for each post as well as an ID of that post (the post number).
+
+Below you will find titles and excerpts for several blog posts. Each post will be provided to you in the following format:
+post: [POST NUMBER]
+title: [TITLE]
+excerpt: [EXCERPT]
+
+Rate ALL posts provided to you on a scale of 1 to 10 with how likely you think they are to discuss topics connected to copyright, trademark, patents, AI, trade secrets, or industrial design, and especially legal topics associated with any of those, with 1 being the least likely and 10 being most likely. For example, if a blog post title has content that touches on trade secrets, then you should score that 10 out of 10 and if a blog post is written about cats, you should score that 0 out of 10. Also, provide a confidence score for each of your ratings as a percentage, the more confident you are in giving the correct rating, the higher the percentage you should give. Finally, for each, provide a category descriptor, i.e. if the post discusses trademark, you should categorize the post as 'trademark'. Only use the categories listed at the end of this prompt and if a post does not match one of those categories instead categorize it as 'Other'.
+
+It is VITAL that your response MUST only be in the following format, do NOT include anything else on each line:
 
 Post W :: Score X/10 :: Confidence Y% :: Category Z
 
-where W is the number of the post, X is your score out of 10, Y is your confidence percentage, and Z is the singular category that best describes the post. Do not write anything other than this for each post. Start each on a new line. Each new line MUST start with "Post W" where W is the number of the post followed by the remainder of the items. Do NOT write any introduction text explaining you know what the task is, ONLY write the information for each post.
+where W is the number of the post as provided, X is your score out of 10, Y is your confidence percentage, and Z is the singular category that best describes the post from the list provided.
+
+As an example, if the data provided to you was
+
+post: 1
+title: Understanding the AI Act and AIDA. Is this the future of AI Law?
+excerpt: The discussion was centered around the implications of emerging AI laws and regulations focusing especially on the EU AI.
+
+post: 2
+title: Why are dogs great?
+excerpt: Let us dig in to the exact reasons why dogs are great.
+
+Your response might be something like:
+
+Post 1 :: Score 10/10 :: Confidence 100% :: Category A.I.
+Post 2 :: Score 0/10 :: Confidence 90% :: Category Other
+
+Do not write anything other than this for each post. Your response will be being used programmatically and as such the output of your response MUST be in that very specific format. Start each on a new line. Each new line MUST start with "Post W" where W is the number of the post that was provided to you, followed by the remainder of the items. Do NOT write any introduction text explaining you know what the task is or what you are about to do, ONLY write the information for each post in the format provided above. Think through this task step by step, and only respond precisely in the way described above. This is very important to my career.
 ```
