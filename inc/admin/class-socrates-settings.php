@@ -445,12 +445,11 @@ Your reply to this prompt should be the first question to ask the student, and t
 							<select id="socratic_chatgpt_model" name="socratic_chatgpt_model">
 								<?php
 								$models        = array(
-									'gpt-3.5-turbo-0613' => 'ChatGPT 3.5 Turbo 0613 (legacy) $$',
-									'gpt-3.5-turbo'      => 'ChatGPT 3.5 Turbo Latest $$',
-									'gpt-3.5-turbo-16k'  => 'ChatGPT 3.5 Turbo Latest with 16K Context $$$',
-									'gpt-4-1106-preview' => 'ChatGPT 4 Turbo with 128K Context $$$$$',
-									'gpt-4'              => 'ChatGPT 4 with 8K Context $$$$',
-									'gpt-4-32k'          => 'ChatGPT 4 with 32K Context $$$$',
+									'gpt-4o-mini'   => '(Recommended) ChatGPT 4o Mini with 128K Context $',
+									'gpt-3.5-turbo' => 'ChatGPT 3.5 Turbo Latest $$',
+									'gpt-4o'        => 'GPT4o with 128K Context. $$$',
+									'gpt-4'         => '(Legacy) ChatGPT 4 with 8K Context $$$$',
+									'gpt-4-turbo'   => '(Legacy) ChatGPT 4 with 128K Context $$$$$',
 								);
 								$current_model = get_option( 'socratic_chatgpt_model' );
 								foreach ( $models as $model => $model_name ) {
