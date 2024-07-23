@@ -12,7 +12,6 @@ namespace UBC\CTLT;
 
 /**
  * Socrates_Bookmark_Creator Class.
- *
  */
 class Socrates_Bookmark_Creator {
 
@@ -25,12 +24,12 @@ class Socrates_Bookmark_Creator {
 	 * Initalize ourselves with the passed link data. Expects an array of arrays, each sub array like this:
 	 *
 	 * array(
-	 * 		'title' => 'Mass extinction event 260 million years ago resulted from climate change, studies say',
-     *      'url' => 'https://arstechnica.com/?p=1956409',
-     *      'excerpt' => 'Ocean stagnation, ecosystem collapses, and volcano eruptions all played a role.',
-     *      'score' => 4, // NOTE: integer
-     *      'category' => 'Climate Change',
-     *      'confidence' => '70%',
+	 *      'title' => 'Mass extinction event 260 million years ago resulted from climate change, studies say',
+	 *      'url' => 'https://arstechnica.com/?p=1956409',
+	 *      'excerpt' => 'Ocean stagnation, ecosystem collapses, and volcano eruptions all played a role.',
+	 *      'score' => 4, // NOTE: integer
+	 *      'category' => 'Climate Change',
+	 *      'confidence' => '70%',
 	 * )
 	 *
 	 * @param  array $categorized_and_scored_links
@@ -46,7 +45,6 @@ class Socrates_Bookmark_Creator {
 
 		// Create the bookmarks.
 		$this->create_bookmarks();
-
 	}//end __construct()
 
 
@@ -61,7 +59,6 @@ class Socrates_Bookmark_Creator {
 	public function set_links( $categorized_and_scored_links ) {
 
 		$this->links = $categorized_and_scored_links;
-
 	}//end set_links()
 
 
@@ -82,8 +79,8 @@ class Socrates_Bookmark_Creator {
 
 			$dupe_check = get_bookmarks(
 				array(
-					'limit' => 1,
-					'search' => $link_array['url'],
+					'limit'          => 1,
+					'search'         => $link_array['url'],
 					'hide_invisible' => 0,
 				)
 			);
@@ -104,7 +101,6 @@ class Socrates_Bookmark_Creator {
 
 		// Set our de-duped list of links as the links class property.
 		$this->set_links( $links );
-
 	}//end check_for_dupes()
 
 
@@ -128,19 +124,20 @@ class Socrates_Bookmark_Creator {
 			// $date_time = date( 'Y-m-d H:i:s' );
 
 			$bookmark_data = array(
-				'link_name'        => $article['title'],
-				'link_url'         => $article['url'],
-				'link_description' => $article['excerpt'],
-				'link_category'    => $category_id,
-				'link_rating'      => $article['score'],
+				'link_name'        => sanitize_title( wp_trim_words( $article['title'], 20 ) ),
+				'link_url'         => esc_url( $article['url'] ),
+				'link_description' => sanitize_title( wp_trim_words( $article['excerpt'], 25 ) ),
+				'link_category'    => absint( $category_id ),
+				'link_rating'      => absint( $article['score'] ),
 				'link_visible'     => 'N', // Visibility is used to determine whether it's been in the NotW yet or not.,
 				// 'link_updated'     => $date_time,
 			);
 
-			wp_insert_link( $bookmark_data );
+			$inserted_link = wp_insert_link( $bookmark_data, true );
+
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'inserted_link' => $inserted_link ), true ), FILE_APPEND ); // phpcs:ignore
 
 		}
-
 	}//end create_bookmarks()
 
 
@@ -153,13 +150,14 @@ class Socrates_Bookmark_Creator {
 	 * @since 3.0.1
 	 */
 	public function create_bookmark_category_if_not_exists( $category = '' ) {
-
+file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'adding category' => $category ), true ), FILE_APPEND ); // phpcs:ignore
 		if ( term_exists( $category, 'link_category' ) ) {
+file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'category exists' ), true ), FILE_APPEND ); // phpcs:ignore
 			return;
 		}
 
-		wp_insert_term( $category, 'link_category' );
-
+		$inserted_term = wp_insert_term( $category, 'link_category' );
+		file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'inserted_term' => $inserted_term ), true ), FILE_APPEND ); // phpcs:ignore
 	}//end create_bookmark_category_if_not_exists()
 
 
@@ -178,7 +176,5 @@ class Socrates_Bookmark_Creator {
 		$term_id = $term->term_id;
 
 		return $term_id;
-
 	}//end get_link_category_id()
-
 }
