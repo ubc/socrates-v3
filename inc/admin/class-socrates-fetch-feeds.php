@@ -296,21 +296,27 @@ class Socrates_Fetch_Feeds {
 
 		// Ensure the starting prompt ends with a new line.
 		$prompt_text .= "\r\n";
-		$prompt_text .= "--\r\n";
-
-		foreach ( $this->links as $lid => $link_data ) {
-			$prompt_text .= 'post: ' . $lid + 1 . "\r\n";
-			$prompt_text .= 'title: ' . wp_trim_words( $link_data['title'], 20 ) . "\r\n";
-			$prompt_text .= 'excerpt: ' . wp_trim_words( $link_data['excerpt'], 50 ) . "\r\n";
-			$prompt_text .= "--\r\n";
-		}
 
 		// Now add the categories set in the options.
 		$categories_string = $this->get_content_categories_as_string();
 
 		if ( ! empty( $categories_string ) ) {
-			$prompt_text .= 'Categories to use: ' . $categories_string;
+			$prompt_text .= "Use only the following categories: \r\n" . $categories_string;
 		}
+
+		// And now add the blog posts, wrapped in <blog_posts> tags.
+		$prompt_text .= "\r\n";
+		$prompt_text .= "Here are the blog posts:\r\n\r\n";
+		$prompt_text .= "<blog_posts>\r\n";
+
+		foreach ( $this->links as $lid => $link_data ) {
+			$prompt_text .= 'post: ' . $lid + 1 . "\r\n";
+			$prompt_text .= 'title: ' . wp_trim_words( $link_data['title'], 20 ) . "\r\n";
+			$prompt_text .= 'excerpt: ' . wp_trim_words( $link_data['excerpt'], 50 ) . "\r\n";
+			$prompt_text .= "\r\n";
+		}
+
+		$prompt_text .= '</blog_posts>';
 
 		// this isn't a conversation, so it's just one 'message' we send, but still have
 		// to formulate it as part of a conversation.
@@ -532,6 +538,16 @@ class Socrates_Fetch_Feeds {
 	 */
 	public function get_content_categories_as_string() {
 
-		return implode( ', ', $this->get_content_categories() );
+		// Initialize an empty string to store the formatted categories.
+		$formatted_string = '';
+
+		// Iterate through each category in the array.
+		foreach ( $this->get_content_categories() as $category ) {
+			// Append the formatted category name to the string with a new line.
+			$formatted_string .= '- ' . $category . PHP_EOL;
+		}
+
+		// Return the formatted string.
+		return $formatted_string;
 	}//end get_content_categories_as_string()
 }
