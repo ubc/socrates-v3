@@ -121,16 +121,13 @@ class Socrates_Bookmark_Creator {
 
 			$category_id = $this->get_link_category_id( $article['category'] );
 
-			// $date_time = date( 'Y-m-d H:i:s' );
-
 			$bookmark_data = array(
-				'link_name'        => sanitize_title( wp_trim_words( $article['title'], 20 ) ),
+				'link_name'        => sanitize_text_field( wp_trim_words( $article['title'], 20 ) ),
 				'link_url'         => esc_url( $article['url'] ),
-				'link_description' => sanitize_title( wp_trim_words( $article['excerpt'], 25 ) ),
+				'link_description' => sanitize_text_field( wp_trim_words( $article['excerpt'], 25 ) ),
 				'link_category'    => absint( $category_id ),
 				'link_rating'      => absint( $article['score'] ),
-				'link_visible'     => 'N', // Visibility is used to determine whether it's been in the NotW yet or not.,
-				// 'link_updated'     => $date_time,
+				'link_visible'     => 'N', // Visibility is used to determine whether it's been in the NotW yet or not.
 			);
 
 			$inserted_link = wp_insert_link( $bookmark_data, true );
