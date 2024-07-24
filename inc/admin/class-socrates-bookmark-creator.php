@@ -135,8 +135,6 @@ class Socrates_Bookmark_Creator {
 
 			$inserted_link = wp_insert_link( $bookmark_data, true );
 
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'inserted_link' => $inserted_link ), true ), FILE_APPEND ); // phpcs:ignore
-
 		}
 	}//end create_bookmarks()
 
@@ -150,14 +148,12 @@ class Socrates_Bookmark_Creator {
 	 * @since 3.0.1
 	 */
 	public function create_bookmark_category_if_not_exists( $category = '' ) {
-file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'adding category' => $category ), true ), FILE_APPEND ); // phpcs:ignore
+
 		if ( term_exists( $category, 'link_category' ) ) {
-file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'category exists' ), true ), FILE_APPEND ); // phpcs:ignore
 			return;
 		}
 
 		$inserted_term = wp_insert_term( $category, 'link_category' );
-		file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'inserted_term' => $inserted_term ), true ), FILE_APPEND ); // phpcs:ignore
 	}//end create_bookmark_category_if_not_exists()
 
 
