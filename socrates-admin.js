@@ -64,39 +64,61 @@ document.addEventListener( 'DOMContentLoaded', function() {
     } );
 } );
 
-document.addEventListener( 'DOMContentLoaded', function() {
-    let feedsContainer = document.getElementById( 'feeds-container' ),
-        addFeedButton = document.getElementById( 'add-feed' );
+document.addEventListener('DOMContentLoaded', function() {
+    let feedsContainer = document.getElementById('feeds-container'),
+        addFeedButton = document.getElementById('add-feed');
 
-    if ( ! addFeedButton ) {
+    let feedIndex = getMaxFeedIndex(feedsContainer) + 1;
+
+    if (!addFeedButton) {
         return;
     }
 
     // Add a new feed
-    addFeedButton.addEventListener( 'click', function() {
-        let index = feedsContainer.children.length + 1;
-        let newRow = document.createElement( 'div' );
+    addFeedButton.addEventListener('click', function() {
+        let newRow = document.createElement('div');
 
-        newRow.classList.add( 'feed-row' );
+        newRow.classList.add('feed-row');
         newRow.innerHTML = `
-            <label for="feed-url-${index}">Feed URL</label>
-            <input type="text" class="regular-text" style="margin-right: 2em;" id="feed-url-${index}" name="socratic_feeds[${index}][url]">
-            <label for="feed-weight-${index}">Weight</label>
-            <input type="text" class="small-text" id="feed-weight-${index}" name="socratic_feeds[${index}][weight]">
+            <label for="feed-url-${feedIndex}">Feed URL</label>
+            <input type="text" class="regular-text" style="margin-right: 2em;" id="feed-url-${feedIndex}" name="socratic_feeds[${feedIndex}][url]">
+            <label for="feed-weight-${feedIndex}">Weight</label>
+            <input type="text" class="small-text" id="feed-weight-${feedIndex}" name="socratic_feeds[${feedIndex}][weight]">
             <button type="button" class="delete-feed button button-secondary dashicons dashicons-no" style="min-width: 32px;"></button>
         `;
 
-        feedsContainer.appendChild( newRow );
-    } );
+        feedsContainer.appendChild(newRow);
+        feedIndex++;
+    });
 
     // Delete a feed
-    feedsContainer.addEventListener( 'click', function(e) {
-		console.log( [e, e.target] );
-        if ( e.target.classList.contains( 'delete-feed' ) ) {
+    feedsContainer.addEventListener('click', function(e) {
+        console.log([e, e.target]);
+        if (e.target.classList.contains('delete-feed')) {
             e.target.parentNode.remove();
         }
-    } );
-} );
+    });
+
+    // Helper function to get the maximum feed index currently in use
+    function getMaxFeedIndex(container) {
+        let maxIndex = 0;
+        let feedRows = container.querySelectorAll('.feed-row');
+        feedRows.forEach(function(row) {
+            let inputs = row.querySelectorAll('input');
+            inputs.forEach(function(input) {
+                let match = input.id.match(/feed-url-(\d+)/);
+                if (match && match[1]) {
+                    let index = parseInt(match[1], 10);
+                    if (index > maxIndex) {
+                        maxIndex = index;
+                    }
+                }
+            });
+        });
+        return maxIndex;
+    }
+});
+
 
 document.addEventListener( 'DOMContentLoaded', function() {
     let categoriesContainer = document.getElementById( 'categories-container' ),
