@@ -150,6 +150,7 @@ class Socrates_Send_LLM_Request {
 			'gpt-4-1106-preview' => '\UBC\CTLT\Socrates_LLM_Chat_Gpt',
 			'gpt-4'              => '\UBC\CTLT\Socrates_LLM_Chat_Gpt',
 			'gpt-4-32k'          => '\UBC\CTLT\Socrates_LLM_Chat_Gpt',
+			'gpt-4o-mini'        => '\UBC\CTLT\Socrates_LLM_Chat_Gpt',
 			'claude-2'           => '\UBC\CTLT\Socrates_LLM_Claude',
 			'claude-instant-1'   => '\UBC\CTLT\Socrates_LLM_Claude',
 		);
