@@ -335,10 +335,10 @@ class Socrates_Notw_Post_Creator {
 		$links = $this->links[ $link_category_id ];
 
 		// If we are showing the desciption for each link.
-		// @TODO: Make this a setting
+		// @TODO: Make this a setting.
 		$show_link_desciption = true;
 
-		// Start fresh
+		// Start fresh.
 		$content  = '<!-- wp:list -->';
 		$content .= '<ul>';
 
@@ -374,7 +374,7 @@ class Socrates_Notw_Post_Creator {
 		$notw_post_category = get_option( 'socratic_notw_post_category' );
 
 		if ( ! $notw_post_category || empty( $notw_post_category ) ) {
-			return 1; // Uncategorized
+			return 1; // Uncategorized.
 		}
 
 		return absint( $notw_post_category );
@@ -474,7 +474,7 @@ class Socrates_Notw_Post_Creator {
 	 */
 	public function change_link_visibility() {
 
-		// Load the bookmark functions if they're not already available
+		// Load the bookmark functions if they're not already available.
 		if ( ! function_exists( 'wp_update_link' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/bookmark.php';
 		}
@@ -552,7 +552,7 @@ class Socrates_Notw_Post_Creator {
 
 		$content .= $post_edit_link;
 
-		$content .= "\r\n\r\nThanks,\r\n\r\nUBÇocrates";
+		$content .= "\r\n\r\nThanks,\r\n\r\nSocratesAI";
 
 		return $content;
 	}//end get_email_body()
