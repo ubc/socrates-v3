@@ -63,7 +63,7 @@ class Socrates_Fetch_Feeds {
 	 *
 	 * @var int
 	 */
-	var $max_articles_to_fetch_per_feed = 3;
+	var $max_articles_to_fetch_per_feed = 5;
 
 	/**
 	 * Construct the plugin object.
@@ -138,7 +138,7 @@ class Socrates_Fetch_Feeds {
 		$feed = fetch_feed( esc_url( $feed_url ) );
 
 		if ( is_wp_error( $feed ) ) {
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Feed Fetch Error: ', $feed->get_error_message() ), true ), FILE_APPEND ); // phpcs:ignore
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Feed Fetch Error: ', $feed->get_error_message(), $feed_url ), true ), FILE_APPEND ); // phpcs:ignore
 			return 'Error: ' . __LINE__;
 		}
 
@@ -187,33 +187,56 @@ class Socrates_Fetch_Feeds {
 	 * @param  string $unique_article_guid The GUID of the article to use as a fallback.
 	 *
 	 * @return void
-	 * @since
+	 * @since 3.0.1
 	 */
 	public function fetch_article_content_and_excerpt( $unique_article_url, $unique_article_guid = '' ) {
+		// Set our consistent request options.
+		$request_options = array(
+			'timeout'   => 5,
+			'sslverify' => false,
+		);
 
 		// Escape to stay safe.
 		$unique_article_url = esc_url( $unique_article_url );
 
-		// Try to fetch the full page's DOM.
-		$html = file_get_contents( $unique_article_url );
+		// Try to fetch the full page's DOM using wp_remote_get.
+		$response = wp_remote_get( $unique_article_url, $request_options );
 
-		// If fetching from link fails, try GUID.
-		if ( false === $html && ! empty( $unique_article_guid ) ) {
+		// If the first URL fails and we have a GUID, try that instead.
+		if ( is_wp_error( $response ) && ! empty( $unique_article_guid ) ) {
 			$unique_article_guid = esc_url( $unique_article_guid );
-			$html                = file_get_contents( $unique_article_guid );
-			$unique_article_url  = $unique_article_guid; // Use GUID as URL if it works.
+			$response            = wp_remote_get( $unique_article_guid, $request_options );
+			if ( ! is_wp_error( $response ) ) {
+				$unique_article_url = $unique_article_guid;
+			}
 		}
 
-		// One last try. If the URL contains &#038; it seems to break on some sites. So we'll try switching
-		// &#038; to just &.
-		if ( false === $html ) {
-			$unique_article_url = str_replace( '&#038;', '&', $unique_article_url );
-			$html               = file_get_contents( $unique_article_url );
+		// One last try with modified URL if it contains &#038;.
+		if ( is_wp_error( $response ) && strpos( $unique_article_url, '&#038;' ) !== false ) {
+			$modified_url = str_replace( '&#038;', '&', $unique_article_url );
+			$response     = wp_remote_get( $modified_url, $request_options );
+			if ( ! is_wp_error( $response ) ) {
+				$unique_article_url = $modified_url;
+			}
 		}
 
-		// If still failed, log the error and return.
-		if ( false === $html ) {
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Error fetching content for: ', $unique_article_url ), true ), FILE_APPEND ); // phpcs:ignore
+		// If all attempts failed, log the error and return.
+		if ( is_wp_error( $response ) ) {
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Error fetching article content from: ' . $unique_article_url, 'Error: ' . $response->get_error_message() ), true ), FILE_APPEND ); // phpcs:ignore
+			return;
+		}
+
+		// Get the response code.
+		$response_code = wp_remote_retrieve_response_code( $response );
+		if ( $response_code !== 200 ) {
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Non-200 response code when fetching: ' . $unique_article_url, 'Response code: ' . $response_code ), true ), FILE_APPEND ); // phpcs:ignore
+			return;
+		}
+
+		// Get the body content.
+		$html = wp_remote_retrieve_body( $response );
+		if ( empty( $html ) ) {
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Empty response body when fetching: ' . $unique_article_url ), true ), FILE_APPEND ); // phpcs:ignore
 			return;
 		}
 
@@ -226,17 +249,15 @@ class Socrates_Fetch_Feeds {
 		$result = $readability->init();
 
 		if ( $result ) {
-
 			$new_link_data = array(
 				'url'     => $unique_article_url,
 				'title'   => $readability->getTitle()->textContent,
 				'excerpt' => $readability->getContent()->textContent,
 			);
-
 		} else {
-
+			// Try alternative parsing method if first attempt fails.
 			$doc                     = new \DOMDocument();
-			$doc->substituteEntities = false; // phpcs:ignore
+			$doc->substituteEntities = false;
 			$content                 = mb_convert_encoding( $html, 'html-entities', 'utf-8' );
 
 			$doc->loadHTML( $content );
@@ -246,25 +267,23 @@ class Socrates_Fetch_Feeds {
 			$result      = $readability->init();
 
 			if ( $result ) {
-
 				$new_link_data = array(
 					'url'     => $unique_article_url,
 					'title'   => $readability->getTitle()->textContent,
 					'excerpt' => $readability->getContent()->textContent,
 				);
-
 			} else {
-				file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( sprintf( 'Retry failed. Error processing text for %s', $unique_article_url ), true ), FILE_APPEND ); // phpcs:ignore;
+				file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Failed to parse content using Readability for: ' . $unique_article_url ), true ), FILE_APPEND ); // phpcs:ignore
 			}
 		}
 
 		if ( false === $new_link_data ) {
-				return;
+			return;
 		}
 
 		// We know we have a new link. Add this to our class property.
 		$this->update_link_list( $new_link_data );
-	}//end fetch_article_content_and_excerpt()
+	}
 
 	/**
 	 * A method to add a link to the list of links.

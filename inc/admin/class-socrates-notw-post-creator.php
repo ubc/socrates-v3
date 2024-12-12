@@ -80,7 +80,6 @@ class Socrates_Notw_Post_Creator {
 		$this->send_email_to_admin();
 
 		return $this->newly_created_post_id;
-
 	}//end __construct()
 
 
@@ -116,7 +115,7 @@ class Socrates_Notw_Post_Creator {
 				continue;
 			}
 
-			$usable_bookmarks[$bookmark_object->term_id][] = array(
+			$usable_bookmarks[ $bookmark_object->term_id ][] = array(
 				'link_id'          => $bookmark_object->link_id,
 				'link_url'         => $bookmark_object->link_url,
 				'link_name'        => $bookmark_object->link_name,
@@ -141,7 +140,6 @@ class Socrates_Notw_Post_Creator {
 		}
 
 		$this->links = $usable_bookmarks;
-
 	}//end gather_links()
 
 
@@ -190,7 +188,6 @@ class Socrates_Notw_Post_Creator {
 		}
 
 		return implode( ',', $needed_cats_array );
-
 	}//end get_notw_bookmark_category_ids()
 
 
@@ -218,7 +215,6 @@ class Socrates_Notw_Post_Creator {
 		$this->post_status = $this->get_notw_post_status();
 
 		$this->post_type = $this->get_post_type();
-
 	}//end generate_post()
 
 
@@ -231,7 +227,6 @@ class Socrates_Notw_Post_Creator {
 	public function get_title() {
 
 		return 'News of the week for the week of ' . $this->get_week_date_string();
-
 	}//end get_title()
 
 
@@ -243,7 +238,7 @@ class Socrates_Notw_Post_Creator {
 	 * @since 3.0.1
 	 */
 	public function get_week_date_string() {
-		return date( "jS \of F Y", strtotime( 'sunday last week' ) );
+		return date( 'jS \of F Y', strtotime( 'sunday last week' ) );
 	}//end get_week_date_string()
 
 
@@ -265,7 +260,6 @@ class Socrates_Notw_Post_Creator {
 		}
 
 		return $content;
-
 	}//end get_content()
 
 
@@ -277,7 +271,7 @@ class Socrates_Notw_Post_Creator {
 	 * @return string the content we'll use for this link category.
 	 * @since 3.0.1
 	 */
-	public function get_content_for_link_category( $link_category_id ){
+	public function get_content_for_link_category( $link_category_id ) {
 
 		$link_cat = absint( $link_category_id );
 
@@ -293,7 +287,6 @@ class Socrates_Notw_Post_Creator {
 		$content .= $link_list_content;
 
 		return $content;
-
 	}//end get_content_for_link_category()
 
 
@@ -306,7 +299,6 @@ class Socrates_Notw_Post_Creator {
 	public function generate_excerpt() {
 
 		return 'Links for the week: ' . $this->get_week_date_string();
-
 	}//end generate_excerpt()
 
 
@@ -327,7 +319,6 @@ class Socrates_Notw_Post_Creator {
 		}
 
 		return $term->name;
-
 	}//end get_category_name_from_id()
 
 
@@ -348,20 +339,20 @@ class Socrates_Notw_Post_Creator {
 		$show_link_desciption = true;
 
 		// Start fresh
-		$content = '<!-- wp:list -->';
+		$content  = '<!-- wp:list -->';
 		$content .= '<ul>';
 
 		foreach ( $links as $lid => $link_array ) {
 
 			$content .= '<!-- wp:list-item -->';
-			$content .= "<li>";
-			$content .= "<a href='" . esc_url( $link_array['link_url'] ) . "'>" . esc_html( $link_array['link_name'] ) . "</a>";
+			$content .= '<li>';
+			$content .= "<a href='" . esc_url( $link_array['link_url'] ) . "'>" . esc_html( $link_array['link_name'] ) . '</a>';
 
 			if ( $show_link_desciption ) {
 				$content .= '<br />' . esc_html( $link_array['link_description'] );
 			}
 
-			$content .= "</li>";
+			$content .= '</li>';
 			$content .= '<!-- /wp:list-item -->';
 
 		}
@@ -370,7 +361,6 @@ class Socrates_Notw_Post_Creator {
 		$content .= '<!-- /wp:list -->';
 
 		return wp_kses_post( $content );
-
 	}//end get_link_list_content_for_category()
 
 	/**
@@ -388,7 +378,6 @@ class Socrates_Notw_Post_Creator {
 		}
 
 		return absint( $notw_post_category );
-
 	}//end get_notw_post_category()
 
 	/**
@@ -400,7 +389,6 @@ class Socrates_Notw_Post_Creator {
 	public function get_notw_post_status() {
 
 		return 'draft';
-
 	}//end get_notw_post_status()
 
 
@@ -442,7 +430,6 @@ class Socrates_Notw_Post_Creator {
 		}
 
 		$this->newly_created_post_id = $new_post_id;
-
 	}//end create_post()
 
 
@@ -464,7 +451,6 @@ class Socrates_Notw_Post_Creator {
 		}
 
 		return $admin_user->ID;
-
 	}//end get_post_author_id()
 
 
@@ -488,11 +474,16 @@ class Socrates_Notw_Post_Creator {
 	 */
 	public function change_link_visibility() {
 
+		// Load the bookmark functions if they're not already available
+		if ( ! function_exists( 'wp_update_link' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/bookmark.php';
+		}
+
 		$links_to_adjust = $this->links;
 
 		foreach ( $links_to_adjust as $lcid => $links_cat_array ) {
 
-			if ( ! is_array( $links_cat_array ) || empty ( $links_cat_array ) ) {
+			if ( ! is_array( $links_cat_array ) || empty( $links_cat_array ) ) {
 				continue;
 			}
 
@@ -504,9 +495,7 @@ class Socrates_Notw_Post_Creator {
 
 				wp_update_link( $update_link_args );
 			}
-
 		}
-
 	}//end change_link_visibility()
 
 
@@ -531,7 +520,6 @@ class Socrates_Notw_Post_Creator {
 		$email_to      = $this->get_email_to();
 
 		wp_mail( $email_to, $email_subject, $email_body );
-
 	}//end send_email_to_admin()
 
 
@@ -567,7 +555,6 @@ class Socrates_Notw_Post_Creator {
 		$content .= "\r\n\r\nThanks,\r\n\r\nUBÇocrates";
 
 		return $content;
-
 	}//end get_email_body()
 
 
@@ -581,7 +568,4 @@ class Socrates_Notw_Post_Creator {
 	public function get_email_to() {
 		return get_option( 'admin_email' );
 	}//end get_email_to()
-
-
-
 }

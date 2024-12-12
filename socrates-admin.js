@@ -68,11 +68,12 @@ document.addEventListener('DOMContentLoaded', function() {
     let feedsContainer = document.getElementById('feeds-container'),
         addFeedButton = document.getElementById('add-feed');
 
-    let feedIndex = getMaxFeedIndex(feedsContainer) + 1;
-
-    if (!addFeedButton) {
+	// If neither element exists, we're not on the feeds page, so return early
+    if (!feedsContainer || !addFeedButton) {
         return;
     }
+
+    let feedIndex = getMaxFeedIndex(feedsContainer) + 1;
 
     // Add a new feed
     addFeedButton.addEventListener('click', function() {
@@ -190,6 +191,41 @@ document.addEventListener('DOMContentLoaded', function() {
 			if ( this.status >= 200 && this.status < 400 ) {
 				// Success!
 				document.getElementById( 'notw-result' ).innerHTML = this.response;
+			} else {
+				// Error :(
+				console.error( 'AJAX error: ' + this.status );
+			}
+		};
+
+		xhr.onerror = function() {
+			// Connection error
+			console.error( 'AJAX connection error' );
+		};
+
+		xhr.send( params );
+	} );
+} );
+
+document.addEventListener('DOMContentLoaded', function() {
+
+    var findRSSFeedsButton = document.getElementById( 'find-rss-feeds' );
+
+	if ( ! findRSSFeedsButton ) {
+		return;
+	}
+
+	findRSSFeedsButton.addEventListener( 'click', function() {
+
+		var xhr = new XMLHttpRequest();
+		var params = 'action=find_rss_feeds&nonce=' + socrates_obj.nonce;
+
+		xhr.open( 'POST', socrates_obj.ajax_url, true );
+		xhr.setRequestHeader( 'Content-type', 'application/x-www-form-urlencoded' );
+
+		xhr.onload = function() {
+			if ( this.status >= 200 && this.status < 400 ) {
+				// Success!
+				document.getElementById( 'find-rss-feeds-result' ).innerHTML = this.response;
 			} else {
 				// Error :(
 				console.error( 'AJAX error: ' + this.status );

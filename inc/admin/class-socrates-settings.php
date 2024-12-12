@@ -22,10 +22,10 @@ class Socrates_Settings {
 		// Register our settings.
 		add_action( 'admin_init', array( $this, 'admin_init__socrates_register_socrates_settings' ) );
 
-		// Add admin menu
+		// Add admin menu.
 		add_action( 'admin_menu', array( $this, 'admin_menu__socrates_admin_menu' ) );
 
-		// Load our JavaScript
+		// Load our JavaScript.
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts__socrates_enqueue_admin_js' ) );
 	}
 
@@ -185,6 +185,17 @@ class Socrates_Settings {
 
 		register_setting(
 			'socrates_notw_settings',
+			'socratic_last_feed_fetch',
+			array(
+				'type'              => 'string',
+				'description'       => 'Timestamp of the last feed fetch',
+				'sanitize_callback' => 'sanitize_text_field',
+				'default'           => '',
+			)
+		);
+
+		register_setting(
+			'socrates_notw_settings',
 			'socratic_notw_day',
 			array(
 				'sanitize_callback' => 'sanitize_text_field',
@@ -234,7 +245,7 @@ class Socrates_Settings {
 	 */
 	public function add_options_page__socrates_settings_page() {
 
-		// Set the active tab
+		// Set the active tab.
 		$active_tab = isset( $_GET['tab'] ) ? sanitize_text_field( $_GET['tab'] ) : 'socrates_settings';
 
 		?>
@@ -678,11 +689,24 @@ Your reply to this prompt should be the first question to ask the student, and t
 
 				<div id="notw-result"></div> <!-- This div will contain the fetched data -->
 
+				<p><button id="find-rss-feeds" type="button" class="button">Find RSS Feeds (API Tool Test)</button></p>
+				<div id="find-rss-feeds-result"></div>
+
 				<div id="spinner" style="display: none;"><span class="spinner is-active"></span></div>
 
 			</div>
 
 			<?php submit_button(); ?>
+
+			<?php
+			$next_scheduled = wp_next_scheduled( 'socrates_fetch_feeds' );
+			$last_fetch     = get_option( 'socratic_last_feed_fetch' );
+
+			echo '<h3>Feed Fetch Schedule</h3>';
+			echo '<p>Next scheduled fetch: ' . ( $next_scheduled ? date_i18n( 'Y-m-d H:i:s', $next_scheduled ) : 'Not scheduled' ) . '</p>';
+			echo '<p>Last fetch: ' . ( $last_fetch ? $last_fetch : 'Never' ) . '</p>';
+			echo '<p><a href="' . wp_nonce_url( admin_url( 'admin-post.php?action=socrates_manual_feed_fetch' ), 'socrates_manual_feed_fetch' ) . '" class="button">Manually Fetch Feeds</a></p>';
+			?>
 		</form>
 		<?php
 	}//end socrates_tab_output__notw_settings()
@@ -762,10 +786,15 @@ Your reply to this prompt should be the first question to ask the student, and t
 	/**
 	 * Register and enqueue our admin JS
 	 *
+	 * @param string $hook The current admin page hook
 	 * @return void
 	 * @since 3.0.1
 	 */
-	public function admin_enqueue_scripts__socrates_enqueue_admin_js() {
+	public function admin_enqueue_scripts__socrates_enqueue_admin_js( $hook ) {
+		// Only load on our settings page.
+		if ( 'settings_page_socrates' !== $hook ) {
+			return;
+		}
 
 		wp_enqueue_script(
 			'socrates-admin',
@@ -774,7 +803,8 @@ Your reply to this prompt should be the first question to ask the student, and t
 			'1.0',
 			true
 		);
-		// Create nonce
+
+		// Create nonce.
 		wp_localize_script(
 			'socrates-admin',
 			'socrates_obj',
@@ -783,5 +813,5 @@ Your reply to this prompt should be the first question to ask the student, and t
 				'nonce'    => wp_create_nonce( 'socrates_nonce' ),
 			)
 		);
-	}//end admin_enqueue_scripts__socrates_enqueue_admin_js()
+	}
 }

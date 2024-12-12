@@ -112,6 +112,11 @@ class Socrates_Bookmark_Creator {
 	 */
 	public function create_bookmarks() {
 
+		// Load the bookmark functions if they're not already available.
+		if ( ! function_exists( 'wp_insert_link' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/bookmark.php';
+		}
+
 		// This is a de-duped list.
 		$bookmarks_to_create = $this->links;
 
@@ -130,7 +135,7 @@ class Socrates_Bookmark_Creator {
 				'link_visible'     => 'N', // Visibility is used to determine whether it's been in the NotW yet or not.
 			);
 
-			$inserted_link = wp_insert_link( $bookmark_data, true );
+			$inserted_link = \wp_insert_link( $bookmark_data, true );
 
 		}
 	}//end create_bookmarks()
@@ -146,11 +151,11 @@ class Socrates_Bookmark_Creator {
 	 */
 	public function create_bookmark_category_if_not_exists( $category = '' ) {
 
-		if ( term_exists( $category, 'link_category' ) ) {
+		if ( \term_exists( $category, 'link_category' ) ) {
 			return;
 		}
 
-		$inserted_term = wp_insert_term( $category, 'link_category' );
+		$inserted_term = \wp_insert_term( $category, 'link_category' );
 	}//end create_bookmark_category_if_not_exists()
 
 
@@ -164,7 +169,7 @@ class Socrates_Bookmark_Creator {
 	 */
 	public function get_link_category_id( $category = '' ) {
 
-		$term = get_term_by( 'name', $category, 'link_category' );
+		$term = \get_term_by( 'name', $category, 'link_category' );
 
 		$term_id = $term->term_id;
 

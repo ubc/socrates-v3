@@ -2,7 +2,6 @@
 /**
  * Class Socrates_Helpers. Included within the main plugin file.
  *
- *
  * @package UBC\CTLT
  */
 
@@ -21,7 +20,7 @@ class Socrates_Helpers {
 	 * Gets the links shown for a specific prompt
 	 *
 	 * @param  [integer] $prompt_id
-	 * @param  [string] $chat_id
+	 * @param  [string]  $chat_id
 	 *
 	 * @return array
 	 * @since 3.0.1
@@ -29,7 +28,7 @@ class Socrates_Helpers {
 	public static function socrates_get_links_shown_for_specific_prompt( $prompt_id, $chat_id ) {
 
 		// Sanitize
-		$chat_id   = \UBC\CTLT\Socrates_Helpers::socrates_sanitize_chat_id( $chat_id );
+		$chat_id   = self::socrates_sanitize_chat_id( $chat_id );
 		$prompt_id = absint( $prompt_id );
 
 		// in the 'links_shown' array, the zeroth item is shown with the second prompt shown to the user which is item 3 (zero-based) in 'messages'
@@ -70,9 +69,14 @@ class Socrates_Helpers {
 		$link_ids_as_csv = implode( ',', $links );
 
 		// Sanitize this as a string of integers and commas.
-		$link_ids_as_csv = \UBC\CTLT\Socrates_Helpers::sanitize_integer_list( $link_ids_as_csv );
+		$link_ids_as_csv = self::sanitize_integer_list( $link_ids_as_csv );
 
-		$bookmarks = get_bookmarks( array( 'include' => $link_ids_as_csv, 'hide_invisible' => 0 ) );
+		$bookmarks = get_bookmarks(
+			array(
+				'include'        => $link_ids_as_csv,
+				'hide_invisible' => 0,
+			)
+		);
 
 		if ( empty( $bookmarks ) ) {
 			return array();
@@ -82,11 +86,14 @@ class Socrates_Helpers {
 
 		foreach ( $bookmarks as $bid => $bookmark ) {
 			// Get the ID, URL, and Name for each bookmark.
-			$usable_links[] = array( 'id' => $bookmark->link_id, 'url' => $bookmark->link_url, 'title' => $bookmark->link_name );
+			$usable_links[] = array(
+				'id'    => $bookmark->link_id,
+				'url'   => $bookmark->link_url,
+				'title' => $bookmark->link_name,
+			);
 		}
 
 		return $usable_links;
-
 	}//end socrates_get_links_shown_for_specific_prompt()
 
 	/**
@@ -124,7 +131,6 @@ class Socrates_Helpers {
 
 		// Return the sanitized string.
 		return $sanitized;
-
 	}//end sanitize_integer_list()
 
 
@@ -151,7 +157,6 @@ class Socrates_Helpers {
 		ob_end_clean();
 
 		return $output;
-
 	}//end get_socrates_links_output()
 
 	/**
@@ -163,35 +168,35 @@ class Socrates_Helpers {
 	 */
 	public static function socrates_generate_combinations( $words = array() ) {
 
-		$results = [];
+		$results   = array();
 		$wordCount = count( $words );
 
 		// If there are 1 or 2 words only, simply return permutations of them.
 		if ( $wordCount <= 2 ) {
-			foreach ( \UBC\CTLT\Socrates_Helpers::socrates_generate_permutations( $words ) as $combination ) {
+			foreach ( self::socrates_generate_permutations( $words ) as $combination ) {
 				$results[] = implode( ' ', $combination );
 			}
 			return $results;
 		}
 
 		// Get all combinations where all words are used.
-		foreach ( \UBC\CTLT\Socrates_Helpers::socrates_generate_permutations( $words ) as $combination ) {
+		foreach ( self::socrates_generate_permutations( $words ) as $combination ) {
 			$results[] = implode( ' ', $combination );
 		}
 
 		// Get all combinations where all the words minus one are used.
 		foreach ( $words as $word ) {
-			$subset = array_diff( $words, [ $word ] );
-			foreach ( \UBC\CTLT\Socrates_Helpers::socrates_generate_permutations( $subset ) as $combination ) {
+			$subset = array_diff( $words, array( $word ) );
+			foreach ( self::socrates_generate_permutations( $subset ) as $combination ) {
 				$results[] = implode( ' ', $combination );
 			}
 		}
 
 		// Get all combinations where all the words minus two are used.
 		foreach ( $words as $firstWord ) {
-			foreach ( array_diff( $words, [ $firstWord ] ) as $secondWord ) {
-				$subset = array_diff( $words, [ $firstWord, $secondWord ] );
-				foreach ( \UBC\CTLT\Socrates_Helpers::socrates_generate_permutations( $subset ) as $combination ) {
+			foreach ( array_diff( $words, array( $firstWord ) ) as $secondWord ) {
+				$subset = array_diff( $words, array( $firstWord, $secondWord ) );
+				foreach ( self::socrates_generate_permutations( $subset ) as $combination ) {
 					$results[] = implode( ' ', $combination );
 				}
 			}
@@ -214,7 +219,10 @@ class Socrates_Helpers {
 
 		// If we're not using links - determined by the socratic_hide_links_in_reply option, return an empty array.
 		if ( 1 === absint( get_option( 'socratic_hide_links_in_reply' ) ) ) {
-			return array( 'links_for_html' => array(), 'link_ids' => array() );
+			return array(
+				'links_for_html' => array(),
+				'link_ids'       => array(),
+			);
 		}
 
 		// We use Rake to get the keywords of the LLM response. This helps us get somewhat appropriate links.
@@ -236,9 +244,12 @@ class Socrates_Helpers {
 		global $wpdb;
 
 		// Now wrap in %
-		$wildcard_keywords = array_map( function( $keyword ) use ( $wpdb ) {
-			return '%' . $wpdb->esc_like( $keyword ) . '%';
-		}, $max_four_keywords );
+		$wildcard_keywords = array_map(
+			function ( $keyword ) use ( $wpdb ) {
+				return '%' . $wpdb->esc_like( $keyword ) . '%';
+			},
+			$max_four_keywords
+		);
 
 		// What's really fun is that if you use a search such as %game% %development% %companies% you
 		// won't get results for "companies who do game development" because the keywords aren't in
@@ -254,7 +265,7 @@ class Socrates_Helpers {
 		// make it a little more likely a result will be found. Let's reduce the number of keywords by
 		// one and fetch all results with either ALL the keywords in any order, or all of them minus one
 		// in any order.
-		$keyword_combos = \UBC\CTLT\Socrates_Helpers::socrates_generate_combinations( $wildcard_keywords );
+		$keyword_combos = self::socrates_generate_combinations( $wildcard_keywords );
 
 		// With each of the keyword combos, we need to build a query. The keyword combos each need to be
 		// looked for in the link name or description. So that needs to look like a bunch of
@@ -280,7 +291,7 @@ class Socrates_Helpers {
 
 		// Now add the last pieces.
 		$query_string .= ") AND `link_visible` = 'Y'";
-		$query_string .= " ORDER BY `link_id` ASC LIMIT 3;";
+		$query_string .= ' ORDER BY `link_id` ASC LIMIT 3;';
 
 		$result = $wpdb->get_results( $query_string );
 
@@ -294,7 +305,7 @@ class Socrates_Helpers {
 					'url'   => $link_post_object->link_url,
 					'title' => $link_post_object->link_name,
 				);
-				$link_ids[] = $link_post_object->link_id;
+				$link_ids[]       = $link_post_object->link_id;
 			}
 		}
 
@@ -303,7 +314,6 @@ class Socrates_Helpers {
 		$response_links['link_ids']       = $link_ids;
 
 		return $response_links;
-
 	}//end get_links_for_response()
 
 
@@ -314,15 +324,15 @@ class Socrates_Helpers {
 	 * @param array $perms Used internally for recursion. Represents the current permutation being generated.
 	 * @return array The generated permutations.
 	 */
-	public static function socrates_generate_permutations( $items, $perms = [] ) {
+	public static function socrates_generate_permutations( $items, $perms = array() ) {
 
 		// If $items is empty, we've reached a terminal state in our recursive generation.
 		// This means we have a complete permutation, so we return it.
 		if ( empty( $items ) ) {
-			return [ $perms ];
+			return array( $perms );
 		}
 
-		$result = [];
+		$result = array();
 
 		// We'll iterate over the items, selecting each one as a starting point for a permutation.
 		// By iterating in reverse, we ensure that the order in which items were initially provided is respected.
@@ -340,12 +350,11 @@ class Socrates_Helpers {
 
 			// By calling this function recursively with one less item,
 			// we continue building the permutation for the remaining items.
-			$result = array_merge( $result, \UBC\CTLT\Socrates_Helpers::socrates_generate_permutations( $new_items, $new_perms ) );
+			$result = array_merge( $result, self::socrates_generate_permutations( $new_items, $new_perms ) );
 		}
 
 		// All the permutations formed using each item as a starting point are aggregated and returned.
 		return $result;
-
 	}//end socrates_generate_permutations()
 
 
@@ -365,7 +374,6 @@ class Socrates_Helpers {
 		$chat_id = esc_attr( $chat_id );
 
 		return $chat_id;
-
 	}//end socrates_generate_chat_id()
 
 
@@ -380,8 +388,8 @@ class Socrates_Helpers {
 		$initial_prompt = get_option( 'socratic_socratic_starting_prompt' );
 
 		// @TODO: Get this generated based on the initial prompt and/or a setting in the dashboard.
-		$default_initial_reply  = 'Question 1: Name a digital world issue that interests you in 5 words or under.';
-		$initial_reply  = get_option( 'socratic_socratic_initial_reply', $default_initial_reply );
+		$default_initial_reply = 'Question 1: Name a digital world issue that interests you in 5 words or under.';
+		$initial_reply         = get_option( 'socratic_socratic_initial_reply', $default_initial_reply );
 
 		$default_chat = array(
 			'messages'        => array(
@@ -392,7 +400,7 @@ class Socrates_Helpers {
 				array(
 					'role'    => 'assistant',
 					'content' => $initial_reply,
-				)
+				),
 			),
 			'summary'         => '',
 			'start_date_time' => current_time( 'mysql' ),
@@ -401,7 +409,6 @@ class Socrates_Helpers {
 		);
 
 		return $default_chat;
-
 	}//end socrates_generate_starting_meta_state()
 
 	/**
@@ -426,7 +433,6 @@ class Socrates_Helpers {
 
 		// Compare the cleaned versions of both strings.
 		return $clean_str1 === $clean_str2;
-
 	}//end are_strings_functionally_equal()
 
 	/**
@@ -449,7 +455,6 @@ class Socrates_Helpers {
 		}
 
 		return $text;
-
 	}//end limit_text()
 
 
@@ -474,10 +479,9 @@ class Socrates_Helpers {
 		$chat_id = $_GET['chat_id'];
 
 		// sanitize the chat_id
-		$chat_id = \UBC\CTLT\Socrates_Helpers::socrates_sanitize_chat_id( $chat_id );
+		$chat_id = self::socrates_sanitize_chat_id( $chat_id );
 
 		return $chat_id;
-
 	}//end socrates_get_chat_id_from_url()
 
 
@@ -498,7 +502,6 @@ class Socrates_Helpers {
 		}
 
 		return $chat_id;
-
 	}//end socrates_sanitize_chat_id()
 
 
@@ -519,7 +522,6 @@ class Socrates_Helpers {
 		$response = $response->toArray()['data'];
 
 		file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( $response, true ), FILE_APPEND ); // phpcs:ignore
-
 	}//end socrates_get_chatgpt_models()
 
 	/**
@@ -540,31 +542,36 @@ class Socrates_Helpers {
 
 		$client = \OpenAI::client( $api_key );
 
-		$result = $client->chat()->create( [
-			'model' => $model_to_use,
-			'messages' => [
-				['role' => 'user', 'content' => $image_prompt],
-			],
-		] );
+		$result = $client->chat()->create(
+			array(
+				'model'    => $model_to_use,
+				'messages' => array(
+					array(
+						'role'    => 'user',
+						'content' => $image_prompt,
+					),
+				),
+			)
+		);
 
-		$generated_image_prompt = \UBC\CTLT\Socrates_Helpers::get_response_string_external( $result );
+		$generated_image_prompt = self::get_response_string_external( $result );
 
 		$client = \OpenAI::client( $api_key );
 
-		$response = $client->images()->create( [
-			'model'           => 'dall-e-3',
-			'prompt'          => $generated_image_prompt,
-			'n'               => 1,
-			'size'            => '1024x1024',
-			'response_format' => 'url',
-			'quality'         => 'hd',
-		] );
+		$response = $client->images()->create(
+			array(
+				'model'           => 'dall-e-3',
+				'prompt'          => $generated_image_prompt,
+				'n'               => 1,
+				'size'            => '1024x1024',
+				'response_format' => 'url',
+				'quality'         => 'hd',
+			)
+		);
 
 		$response = $response->toArray()['data'];
 
-		// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( $response, true ), FILE_APPEND ); // phpcs:ignore
 		wp_die( '<img src="' . esc_url( $response[0]['url'] ) . '" alt="' . sanitize_text_field( $generated_image_prompt ) . '" />' );
-
 	}//end socrates_get_image_from_prompt()
 
 
@@ -607,8 +614,7 @@ class Socrates_Helpers {
 
 		// At this point, you have the audio file saved on your server
 		// You can provide a link to download it or embed it in a webpage
-		wp_die( "Audio file created at: " . $audio_file_path );
-
+		wp_die( 'Audio file created at: ' . $audio_file_path );
 	}//end socrates_get_audio_of_chat()
 
 
@@ -628,7 +634,7 @@ class Socrates_Helpers {
 
 		foreach ( $llm_response_data->choices as $result ) {
 			// Only want the last response, I THINK.
-			if ( ! isset ( $result->finishReason ) || 'stop' !== $result->finishReason ) {
+			if ( ! isset( $result->finishReason ) || 'stop' !== $result->finishReason ) {
 				continue;
 			}
 
@@ -641,7 +647,6 @@ class Socrates_Helpers {
 		}
 
 		return $response_string;
-
 	}//end get_response_string_external()
 
 
@@ -650,7 +655,7 @@ class Socrates_Helpers {
 	 *
 	 * Usage: $socratic_chats = \UBC\CTLT\Socrates_Helpers::get_socratic_chats_for_user( $user_id );
 	 *
-	 * @param  int  $user_id
+	 * @param  int $user_id
 	 *
 	 * @return array $socratic_chats An array of socratic chats for this user. Empty array if none exist.
 	 * @since 3.0.1
@@ -681,7 +686,6 @@ class Socrates_Helpers {
 		}
 
 		return $socratic_chats;
-
 	}//end get_socratic_chats_for_user()
 
 	/**
@@ -699,7 +703,7 @@ class Socrates_Helpers {
 	public static function is_this_a_new_chat() {
 
 		// No chats? New chat.
-		$socratic_chats = \UBC\CTLT\Socrates_Helpers::get_socratic_chats_for_user();
+		$socratic_chats = self::get_socratic_chats_for_user();
 
 		if ( empty( $socratic_chats ) ) {
 			return true;
@@ -712,7 +716,6 @@ class Socrates_Helpers {
 
 		// Not a new chat. (This will therefore go on to load the user's most recent chat)
 		return false;
-
 	}//end is_this_a_new_chat()
 
 
@@ -732,24 +735,23 @@ class Socrates_Helpers {
 	public static function get_chat_id_to_load() {
 
 		// If this is a new chat, generate a new chat ID and return that.
-		if ( \UBC\CTLT\Socrates_Helpers::is_this_a_new_chat() ) {
-			return \UBC\CTLT\Socrates_Helpers::socrates_generate_chat_id();
+		if ( self::is_this_a_new_chat() ) {
+			return self::socrates_generate_chat_id();
 		}
 
 		// If there's a chat ID in the URL, use that. (this is checked for user validity elsewhere)
-		$chat_id_from_url = \UBC\CTLT\Socrates_Helpers::socrates_get_chat_id_from_url();
+		$chat_id_from_url = self::socrates_get_chat_id_from_url();
 
 		if ( $chat_id_from_url ) {
 			return $chat_id_from_url;
 		}
 
 		// If there's no chat ID in the URL, use the most recent chat for the current user.
-		$socratic_chats = \UBC\CTLT\Socrates_Helpers::get_socratic_chats_for_user();
+		$socratic_chats = self::get_socratic_chats_for_user();
 
 		if ( ! empty( $socratic_chats ) ) {
 			return array_key_last( $socratic_chats );
 		}
-
 	}//end get_chat_id_to_load()
 
 
@@ -776,7 +778,7 @@ class Socrates_Helpers {
 
 		// Sanitize
 		$user_id = absint( $user_id );
-		$chat_id = \UBC\CTLT\Socrates_Helpers::socrates_sanitize_chat_id( $chat_id );
+		$chat_id = self::socrates_sanitize_chat_id( $chat_id );
 
 		// Admins should be able to see all chats.
 		if ( user_can( $user_id, 'manage_options' ) ) {
@@ -798,7 +800,6 @@ class Socrates_Helpers {
 
 		// Chat ID is valid, and is in the passed user ID's meta, so return true.
 		return true;
-
 	}//end can_user_view_chat()
 
 
@@ -819,7 +820,7 @@ class Socrates_Helpers {
 
 		$known_error_codes = array(
 			'user_cant_view_chat',
-			'must_log_in'
+			'must_log_in',
 		);
 
 		$default_mesage = '<p>An unknown error occurred : ' . esc_html( $message_code ) . '</p>';
@@ -831,23 +832,21 @@ class Socrates_Helpers {
 		switch ( $message_code ) {
 
 			case 'user_cant_view_chat':
-
-				$url = strtok( $_SERVER["REQUEST_URI"], '?' ) . '?new-socratic-chat=1';
+				$url     = strtok( $_SERVER['REQUEST_URI'], '?' ) . '?new-socratic-chat=1';
 				$message = "<p>The requested chat is not available for your user account. <a href='" . $url . "'>Start a new chat</a>.</p>";
 
 				return wp_kses_post( $message );
 
 			case 'must_log_in':
-				$redirect_url = strtok( $_SERVER["REQUEST_URI"], '?' );
+				$redirect_url            = strtok( $_SERVER['REQUEST_URI'], '?' );
 				$login_url_with_redirect = wp_login_url( $redirect_url );
-				$message = "<p>You must be signed in to use this tool. <a href='" . esc_url( $login_url_with_redirect) . "'>Sign In</a>.</p>";
+				$message                 = "<p>You must be signed in to use this tool. <a href='" . esc_url( $login_url_with_redirect ) . "'>Sign In</a>.</p>";
 
 				return wp_kses_post( $message );
 
 			default:
 				return $default_mesage;
 		}
-
 	}//end show_error_message()
 
 
@@ -869,7 +868,6 @@ class Socrates_Helpers {
 		$socrates_feeds = new \UBC\CTLT\Socrates_Fetch_Feeds();
 
 		return $socrates_feeds->output();
-
 	}//end fetch_feeds()
 
 	/**
@@ -890,7 +888,6 @@ class Socrates_Helpers {
 		$socrates_bookmark_creator = new \UBC\CTLT\Socrates_Bookmark_Creator( $categorized_and_scored_links );
 
 		return count( $categorized_and_scored_links );
-
 	}//end create_bookmarks()
 
 
@@ -911,8 +908,56 @@ class Socrates_Helpers {
 		$newly_created_post_id = new \UBC\CTLT\Socrates_Notw_Post_Creator();
 
 		return $newly_created_post_id;
-
 	}//end create_notw_post_from_unpublished_links()
 
+	public static function socrates_add_cron_schedules( $schedules ) {
+		$schedules['every_other_day'] = array(
+			'interval' => 172800, // 2 days in seconds
+			'display'  => __( 'Every Other Day' ),
+		);
+		return $schedules;
+	}
 
-}//end class Socrates_Helpers
+	public static function socrates_activate() {
+		self::socrates_schedule_feed_fetch();
+	}
+
+	public static function socrates_deactivate() {
+		wp_clear_scheduled_hook( 'socrates_fetch_feeds' );
+	}
+
+	public static function socrates_schedule_feed_fetch() {
+		$cadence = get_option( 'socratic_link_collection_cadence', 'Daily at Midnight' );
+
+		wp_clear_scheduled_hook( 'socrates_fetch_feeds' );
+
+		switch ( $cadence ) {
+			case 'Daily at Midnight':
+				wp_schedule_event( strtotime( 'today 23:59:59' ), 'daily', 'socrates_fetch_feeds' );
+				break;
+			case 'Every other day at Midnight':
+				wp_schedule_event( strtotime( 'today 23:59:59' ), 'every_other_day', 'socrates_fetch_feeds' );
+				break;
+			case 'Every Sunday at Midnight':
+				wp_schedule_event( strtotime( 'next Sunday 23:59:59' ), 'weekly', 'socrates_fetch_feeds' );
+				break;
+		}
+	}
+
+	public static function socrates_update_feed_schedule( $old_value, $new_value, $option ) {
+		self::socrates_schedule_feed_fetch();
+	}
+
+	public static function socrates_cron_fetch_feeds() {
+
+		try {
+			$feeds = self::fetch_feeds();
+
+			$created_bookmarks = self::create_bookmarks( $feeds );
+
+			update_option( 'socratic_last_feed_fetch', current_time( 'mysql' ) );
+		} catch ( Exception $e ) {
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Socrates feed fetch error: ' . $e->getMessage() ), true ), FILE_APPEND ); // phpcs:ignore
+		}
+	}
+}//end class

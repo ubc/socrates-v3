@@ -40,6 +40,14 @@ define( 'UBC_SELFSOCV3_DIR', plugin_dir_path( __FILE__ ) );
 define( 'UBC_SELFSOCV3_URL', plugin_dir_url( __FILE__ ) );
 
 require_once UBC_SELFSOCV3_DIR . 'inc/public/class-socrates-helpers.php';
+require_once UBC_SELFSOCV3_DIR . 'inc/admin/class-socrates-cron.php';
+
+// Register activation and deactivation hooks.
+register_activation_hook( __FILE__, array( '\UBC\CTLT\Socrates_Cron', 'activate' ) );
+register_deactivation_hook( __FILE__, array( '\UBC\CTLT\Socrates_Cron', 'deactivate' ) );
+
+// Hook for updating cron schedule when option is changed.
+add_action( 'update_option_socratic_link_collection_cadence', array( '\UBC\CTLT\Socrates_Helpers', 'socrates_update_feed_schedule' ), 10, 3 );
 
 class SocratesV3 {
 
@@ -66,6 +74,9 @@ class SocratesV3 {
 		// AJAX Handler to create NOTW Post.
 		add_action( 'wp_ajax_create_notw_post', array( $this, 'wp_ajax_create_notw_post__create_notw_post' ) );
 
+		// AJAX Handler for the RSS Feeds Finder (Tool Test).
+		add_action( 'wp_ajax_find_rss_feeds', array( $this, 'wp_ajax_find_rss_feeds__find_rss_feeds' ) );
+
 		// Register the block and participant class.
 		add_action( 'after_setup_theme', array( $this, 'after_setup_theme__register_participant_chat_block' ) );
 
@@ -82,6 +93,15 @@ class SocratesV3 {
 
 		// Log the models available to us from ChatGPT.
 		add_action( 'admin_init', array( $this, 'ubc_ctlt_socrates_quick_check' ) );
+
+		// Add custom cron schedule.
+		add_filter( 'cron_schedules', array( '\UBC\CTLT\Socrates_Helpers', 'socrates_add_cron_schedules' ) );
+
+		// Hook for updating cron schedule when option is changed.
+		add_action( 'update_option_socratic_link_collection_cadence', array( '\UBC\CTLT\Socrates_Helpers', 'socrates_update_feed_schedule' ), 10, 3 );
+
+		// Add the cron action hook.
+		add_action( 'socrates_fetch_feeds', array( '\UBC\CTLT\Socrates_Helpers', 'socrates_cron_fetch_feeds' ) );
 	}//end __construct()
 
 
@@ -156,6 +176,34 @@ class SocratesV3 {
 
 		wp_die();
 	}//end wp_ajax_create_notw_post__create_notw_post()
+
+	/**
+	 * AJAX Handler for the RSS Feeds Finder (Tool Test).
+	 *
+	 * @return void
+	 */
+	public function wp_ajax_find_rss_feeds__find_rss_feeds() {
+
+		// Check for nonce security.
+		if ( ! check_ajax_referer( 'socrates_nonce', 'nonce', false ) ) {
+			echo 'Nonce check failed!';
+			wp_die();
+		}
+
+		$saved_feeds = get_option( 'socratic_feeds' );
+
+		if ( empty( $saved_feeds ) || ! is_array( $saved_feeds ) ) {
+			echo wp_kses_post( 'No feeds found.' );
+			wp_die();
+		}
+
+		foreach ( $saved_feeds as $feed ) {
+			$feed_url = esc_url_raw( $feed['url'] );
+
+		}
+
+		wp_die();
+	}//end wp_ajax_find_rss_feeds__find_rss_feeds()
 
 	/**
 	 * Register the block and participant class.
