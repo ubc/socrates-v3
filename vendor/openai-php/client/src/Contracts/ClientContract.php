@@ -2,7 +2,9 @@
 
 namespace OpenAI\Contracts;
 
+use OpenAI\Contracts\Resources\AssistantsContract;
 use OpenAI\Contracts\Resources\AudioContract;
+use OpenAI\Contracts\Resources\BatchesContract;
 use OpenAI\Contracts\Resources\ChatContract;
 use OpenAI\Contracts\Resources\CompletionsContract;
 use OpenAI\Contracts\Resources\EditsContract;
@@ -13,6 +15,8 @@ use OpenAI\Contracts\Resources\FineTuningContract;
 use OpenAI\Contracts\Resources\ImagesContract;
 use OpenAI\Contracts\Resources\ModelsContract;
 use OpenAI\Contracts\Resources\ModerationsContract;
+use OpenAI\Contracts\Resources\ThreadsContract;
+use OpenAI\Contracts\Resources\VectorStoresContract;
 
 interface ClientContract
 {
@@ -85,7 +89,7 @@ interface ClientContract
     public function fineTunes(): FineTunesContract;
 
     /**
-     * Given a input text, outputs if the model classifies it as violating OpenAI's content policy.
+     * Given an input text, outputs if the model classifies it as violating OpenAI's content policy.
      *
      * @see https://platform.openai.com/docs/api-reference/moderations
      */
@@ -97,4 +101,32 @@ interface ClientContract
      * @see https://platform.openai.com/docs/api-reference/images
      */
     public function images(): ImagesContract;
+
+    /**
+     * Build assistants that can call models and use tools to perform tasks.
+     *
+     * @see https://platform.openai.com/docs/api-reference/assistants
+     */
+    public function assistants(): AssistantsContract;
+
+    /**
+     * Create threads that assistants can interact with.
+     *
+     * @see https://platform.openai.com/docs/api-reference/threads
+     */
+    public function threads(): ThreadsContract;
+
+    /**
+     * Create large batches of API requests for asynchronous processing. The Batch API returns completions within 24 hours.
+     *
+     * @see https://platform.openai.com/docs/api-reference/batch
+     */
+    public function batches(): BatchesContract;
+
+    /**
+     * Create and update vector stores that assistants can interact with
+     *
+     * @see https://platform.openai.com/docs/api-reference/vector-stores
+     */
+    public function vectorStores(): VectorStoresContract;
 }

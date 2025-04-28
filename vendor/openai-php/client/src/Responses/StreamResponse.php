@@ -3,8 +3,8 @@
 namespace OpenAI\Responses;
 
 use Generator;
-use IteratorAggregate;
 use OpenAI\Contracts\ResponseHasMetaInformationContract;
+use OpenAI\Contracts\ResponseStreamContract;
 use OpenAI\Exceptions\ErrorException;
 use OpenAI\Responses\Meta\MetaInformation;
 use Psr\Http\Message\ResponseInterface;
@@ -13,9 +13,9 @@ use Psr\Http\Message\StreamInterface;
 /**
  * @template TResponse
  *
- * @implements IteratorAggregate<int, TResponse>
+ * @implements ResponseStreamContract<TResponse>
  */
-final class StreamResponse implements IteratorAggregate, ResponseHasMetaInformationContract
+final class StreamResponse implements ResponseHasMetaInformationContract, ResponseStreamContract
 {
     /**
      * Creates a new Stream Response instance.
@@ -37,6 +37,12 @@ final class StreamResponse implements IteratorAggregate, ResponseHasMetaInformat
         while (! $this->response->getBody()->eof()) {
             $line = $this->readLine($this->response->getBody());
 
+            $event = null;
+            if (str_starts_with($line, 'event:')) {
+                $event = trim(substr($line, strlen('event:')));
+                $line = $this->readLine($this->response->getBody());
+            }
+
             if (! str_starts_with($line, 'data:')) {
                 continue;
             }
@@ -48,10 +54,15 @@ final class StreamResponse implements IteratorAggregate, ResponseHasMetaInformat
             }
 
             /** @var array{error?: array{message: string|array<int, string>, type: string, code: string}} $response */
-            $response = json_decode($data, true, 512, JSON_THROW_ON_ERROR);
+            $response = json_decode($data, true, flags: JSON_THROW_ON_ERROR);
 
             if (isset($response['error'])) {
-                throw new ErrorException($response['error']);
+                throw new ErrorException($response['error'], $this->response->getStatusCode());
+            }
+
+            if ($event !== null) {
+                $response['__event'] = $event;
+                $response['__meta'] = $this->meta();
             }
 
             yield $this->responseClass::from($response);

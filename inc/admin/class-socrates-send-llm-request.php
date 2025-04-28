@@ -107,6 +107,10 @@ class Socrates_Send_LLM_Request {
 				$this->model = esc_html( get_option( 'socratic_anthropic_model' ) );
 				break;
 
+			case 'ollama':
+				$this->model = esc_html( get_option( 'socratic_ollama_model' ) );
+				break;
+
 			case 'chatgpt':
 				$this->model = esc_html( get_option( 'socratic_chatgpt_model' ) );
 				break;
@@ -142,41 +146,32 @@ class Socrates_Send_LLM_Request {
 	 */
 	public function set_client_class() {
 
-		// @todo: Allow the individual llm classes to set this.
-		$models_to_client_classes = array(
-			'gpt-3.5-turbo-0613' => '\UBC\CTLT\Socrates_LLM_Chat_Gpt',
-			'gpt-3.5-turbo'      => '\UBC\CTLT\Socrates_LLM_Chat_Gpt',
-			'gpt-3.5-turbo-16k'  => '\UBC\CTLT\Socrates_LLM_Chat_Gpt',
-			'gpt-4-1106-preview' => '\UBC\CTLT\Socrates_LLM_Chat_Gpt',
-			'gpt-4'              => '\UBC\CTLT\Socrates_LLM_Chat_Gpt',
-			'gpt-4-32k'          => '\UBC\CTLT\Socrates_LLM_Chat_Gpt',
-			'gpt-4o-mini'        => '\UBC\CTLT\Socrates_LLM_Chat_Gpt',
-			'claude-2'           => '\UBC\CTLT\Socrates_LLM_Claude',
-			'claude-instant-1'   => '\UBC\CTLT\Socrates_LLM_Claude',
-		);
-
-		/**
-		 * Filters the models to client classes array.
-		 *
-		 * This filter allows add-on developers to add a model and associated client class to make it available for
-		 * people to use.
-		 *
-		 * @since 3.0.1
-		 *
-		 * @hooked None by default.
-		 */
-		$models_to_client_classes = apply_filters( 'socrates_v3_models_to_client_classes', $models_to_client_classes );
-
-		if ( ! in_array( $this->model, array_keys( $models_to_client_classes ), true ) ) {
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( __FILE__, __LINE__, 'model not in array', $this->model, $models_to_client_classes ), true ), FILE_APPEND ); // phpcs:ignore
-			wp_die( 'Chosen model not available.' );
+		// Determine the class to load based on the selected tool.
+		$class_to_load = '';
+		switch ( $this->tool ) {
+			case 'chatgpt':
+				$class_to_load = '\UBC\CTLT\Socrates_LLM_Chat_Gpt';
+				break;
+			case 'claude':
+				$class_to_load = '\UBC\CTLT\Socrates_LLM_Claude';
+				break;
+			case 'ollama':
+				$class_to_load = '\UBC\CTLT\Socrates_LLM_Ollama';
+				break;
+			default:
+				// Allow extensions to add their own tool/class mapping.
+				$class_to_load = apply_filters( 'socrates_v3_custom_llm_class', '', $this->tool );
+				if ( empty( $class_to_load ) ) {
+					// Log the error for debugging.
+					file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( __FILE__, __LINE__, 'Unsupported tool', $this->tool ), true ), FILE_APPEND ); // phpcs:ignore
+					wp_die( 'Invalid or unsupported LLM tool selected: ' . esc_html( $this->tool ) );
+				}
 		}
-
-		$class_to_load = $models_to_client_classes[ $this->model ];
 
 		$file_to_load_for_chosen_llm_class = array(
 			'\UBC\CTLT\Socrates_LLM_Chat_Gpt' => plugin_dir_path( __FILE__ ) . 'class-socrates-llm-chat-gpt.php',
 			'\UBC\CTLT\Socrates_LLM_Claude'   => plugin_dir_path( __FILE__ ) . 'class-socrates-llm-claude.php',
+			'\UBC\CTLT\Socrates_LLM_Ollama'   => plugin_dir_path( __FILE__ ) . 'class-socrates-llm-ollama.php',
 		);
 
 		/**
@@ -190,16 +185,17 @@ class Socrates_Send_LLM_Request {
 		 */
 		$file_to_load_for_chosen_llm_class = apply_filters( 'socrates_v3_file_to_load_for_chosen_llm_class', $file_to_load_for_chosen_llm_class );
 
-		if ( ! in_array( $class_to_load, array_keys( $file_to_load_for_chosen_llm_class ) ) ) {
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( __FILE__, __LINE__, 'file not in array', $class_to_load, $file_to_load_for_chosen_llm_class ), true ), FILE_APPEND ); // phpcs:ignore
-			wp_die( 'Chosen class not available.' );
+		// Check if the determined class has a file path defined.
+		if ( ! array_key_exists( $class_to_load, $file_to_load_for_chosen_llm_class ) ) {
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( __FILE__, __LINE__, 'file not defined for class', $class_to_load, $file_to_load_for_chosen_llm_class ), true ), FILE_APPEND ); // phpcs:ignore
+			wp_die( 'No file path defined for the chosen LLM class: ' . esc_html( $class_to_load ) );
 		}
 
 		$file_path = $file_to_load_for_chosen_llm_class[ $class_to_load ];
 
 		if ( ! file_exists( $file_path ) ) {
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( __FILE__, __LINE__, 'file does not exist', $file_path, $file_to_load_for_chosen_llm_class, $class_to_load ), true ), FILE_APPEND ); // phpcs:ignore
-			wp_die( 'File does not exist: ' . $file_path );
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( __FILE__, __LINE__, 'file does not exist', $file_path, $class_to_load ), true ), FILE_APPEND ); // phpcs:ignore
+			wp_die( 'LLM class file does not exist: ' . esc_html( $file_path ) );
 		}
 
 		require_once $file_path;

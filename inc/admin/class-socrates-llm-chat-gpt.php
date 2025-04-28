@@ -16,10 +16,6 @@
 
 namespace UBC\CTLT;
 
-// Used for testing if necessary.
-// use OpenAI\Testing\ClientFake;
-// use OpenAI\Responses\Chat\CreateResponse;
-
 /**
  * Socrates_LLM_Chat_Gpt Class.
  *
@@ -41,7 +37,6 @@ class Socrates_LLM_Chat_Gpt {
 	public function __construct() {
 
 		$this->set_api_key();
-
 	}//end __construct()
 
 
@@ -54,7 +49,6 @@ class Socrates_LLM_Chat_Gpt {
 	public function set_api_key() {
 
 		$this->api_key = esc_attr( get_option( 'socratic_chatgpt_api_key' ) );
-
 	}//end set_api_key()
 
 	/**
@@ -68,28 +62,7 @@ class Socrates_LLM_Chat_Gpt {
 
 		$client = \OpenAI::client( $this->api_key );
 
-		// $client = new ClientFake([
-		// 	CreateResponse::fake([
-		// 		'choices' => [
-		// 			[
-		// 				'text' => 'awesome!',
-		// 			],
-		// 		],
-		// 	]),
-		// ]);
-
-		// $client = new ClientFake([
-		// 	new \OpenAI\Exceptions\ErrorException([
-		// 		'message' => 'The server had an error processing your request. Sorry about that! You can retry your request,
-		//                    or contact us through our help center at fake.fakesite.come if you keep seeing this error.
-		//                    (Please include the request ID abcd1234efgh5678 in your email.)',
-		// 		'type' => 'invalid_request_error',
-		// 		'code' => null,
-		// 	])
-		// ]);
-
 		return $client;
-
 	}//end get_client()
 
 
@@ -97,7 +70,7 @@ class Socrates_LLM_Chat_Gpt {
 	 * Formulate the request we're going to send.
 	 *
 	 * @param  array $request_params
-	 * 				     'messages' : the full set of messages sent to ChatGPT
+	 *                   'messages' : the full set of messages sent to ChatGPT
 	 *                   'model'  : the model we wish to use
 	 *                   This is filtered, so other data may be available.
 	 *
@@ -112,7 +85,6 @@ class Socrates_LLM_Chat_Gpt {
 		);
 
 		return $request;
-
 	}//end get_request()
 
 
@@ -127,6 +99,8 @@ class Socrates_LLM_Chat_Gpt {
 	 */
 	public function make_request( $client, $request ) {
 
+		file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'OpenAI Request' => $request ), true ), FILE_APPEND ); // phpcs:ignore
+
 		try {
 
 			$data = $client->chat()->create( $request );
@@ -136,21 +110,20 @@ class Socrates_LLM_Chat_Gpt {
 
 			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'API Error' => $e->getMessage() ), true ), FILE_APPEND ); // phpcs:ignore
 
-			return [
+			return array(
 				'error'   => true,
-				'message' => $e->getMessage()
-			];
+				'message' => $e->getMessage(),
+			);
 
 		} catch ( \Exception $e ) {
 
 			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Unexpected Error' => $e->getMessage() ), true ), FILE_APPEND ); // phpcs:ignore
 
-			return [
-				'error' => true,
-				'message' => 'An unexpected error occurred: ' . $e->getMessage()
-			];
+			return array(
+				'error'   => true,
+				'message' => 'An unexpected error occurred: ' . $e->getMessage(),
+			);
 		}
-
 	}//end make_request()
 
 
@@ -174,7 +147,7 @@ class Socrates_LLM_Chat_Gpt {
 
 		foreach ( $llm_response_data->choices as $result ) {
 			// Only want the last response, I THINK.
-			if ( ! isset ( $result->finishReason ) || 'stop' !== $result->finishReason ) {
+			if ( ! isset( $result->finishReason ) || 'stop' !== $result->finishReason ) {
 				continue;
 			}
 
@@ -187,7 +160,5 @@ class Socrates_LLM_Chat_Gpt {
 		}
 
 		return $response_string;
-
 	}//end get_response_string()
-
 }

@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace OpenAI;
 
 use OpenAI\Contracts\ClientContract;
+use OpenAI\Contracts\Resources\ThreadsContract;
+use OpenAI\Contracts\Resources\VectorStoresContract;
 use OpenAI\Contracts\TransporterContract;
+use OpenAI\Resources\Assistants;
 use OpenAI\Resources\Audio;
+use OpenAI\Resources\Batches;
 use OpenAI\Resources\Chat;
 use OpenAI\Resources\Completions;
 use OpenAI\Resources\Edits;
@@ -17,6 +21,8 @@ use OpenAI\Resources\FineTuning;
 use OpenAI\Resources\Images;
 use OpenAI\Resources\Models;
 use OpenAI\Resources\Moderations;
+use OpenAI\Resources\Threads;
+use OpenAI\Resources\VectorStores;
 
 final class Client implements ClientContract
 {
@@ -122,7 +128,7 @@ final class Client implements ClientContract
     }
 
     /**
-     * Given a input text, outputs if the model classifies it as violating OpenAI's content policy.
+     * Given an input text, outputs if the model classifies it as violating OpenAI's content policy.
      *
      * @see https://platform.openai.com/docs/api-reference/moderations
      */
@@ -139,5 +145,45 @@ final class Client implements ClientContract
     public function images(): Images
     {
         return new Images($this->transporter);
+    }
+
+    /**
+     * Build assistants that can call models and use tools to perform tasks.
+     *
+     * @see https://platform.openai.com/docs/api-reference/assistants
+     */
+    public function assistants(): Assistants
+    {
+        return new Assistants($this->transporter);
+    }
+
+    /**
+     * Create threads that assistants can interact with.
+     *
+     * @see https://platform.openai.com/docs/api-reference/threads
+     */
+    public function threads(): ThreadsContract
+    {
+        return new Threads($this->transporter);
+    }
+
+    /**
+     * Create large batches of API requests for asynchronous processing. The Batch API returns completions within 24 hours.
+     *
+     * @see https://platform.openai.com/docs/api-reference/batch
+     */
+    public function batches(): Batches
+    {
+        return new Batches($this->transporter);
+    }
+
+    /**
+     * Create and update vector stores that assistants can interact with
+     *
+     * @see https://platform.openai.com/docs/api-reference/vector-stores
+     */
+    public function vectorStores(): VectorStoresContract
+    {
+        return new VectorStores($this->transporter);
     }
 }

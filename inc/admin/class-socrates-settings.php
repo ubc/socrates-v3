@@ -142,6 +142,31 @@ class Socrates_Settings {
 			)
 		);
 
+		// Ollama settings registration
+		register_setting(
+			'socrates_llm_settings',
+			'socratic_ollama_api_key',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+			)
+		);
+
+		register_setting(
+			'socrates_llm_settings',
+			'socratic_ollama_model',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+			)
+		);
+
+		register_setting(
+			'socrates_llm_settings',
+			'socratic_ollama_server_url',
+			array(
+				'sanitize_callback' => 'esc_url_raw',
+			)
+		);
+
 		// NOTW settings.
 		register_setting(
 			'socrates_notw_settings',
@@ -427,6 +452,7 @@ Your reply to this prompt should be the first question to ask the student, and t
 								$available_tools = array(
 									'chatgpt' => 'ChatGPT by OpenAI',
 									'claude'  => 'Claude by Anthropic',
+									'ollama'  => 'Ollama (Local/Remote)',
 								);
 
 								// Filter the tools so it's editable externally
@@ -456,7 +482,8 @@ Your reply to this prompt should be the first question to ask the student, and t
 							<select id="socratic_chatgpt_model" name="socratic_chatgpt_model">
 								<?php
 								$models        = array(
-									'gpt-4o-mini'   => '(Recommended) ChatGPT 4o Mini with 128K Context $',
+									'gpt-4.1-nano'  => '(Recommended) GPT-4.1 Nano (Latest) $',
+									'gpt-4o-mini'   => 'ChatGPT 4o Mini with 128K Context $',
 									'gpt-3.5-turbo' => 'ChatGPT 3.5 Turbo Latest $$',
 									'gpt-4o'        => 'GPT4o with 128K Context. $$$',
 									'gpt-4'         => '(Legacy) ChatGPT 4 with 8K Context $$$$',
@@ -500,10 +527,33 @@ Your reply to this prompt should be the first question to ask the student, and t
 					</tr>
 
 					<tr class="tool-settings claude-settings">
-						<th scope="row"><label for="socratic_anthropic_model">Anthropic Model Version To Use</label></th>
+						<th scope="row"><label for="socratic_anthropic_model_version">Anthropic Model Version To Use</label></th>
 						<td>
 							<input type="text" id="socratic_anthropic_model_version" name="socratic_anthropic_model_version" class="regular-text" value="<?php echo esc_attr( get_option( 'socratic_anthropic_model_version' ) ); ?>">
 							<p class="description">i.e. 2023-06-01</p>
+						</td>
+					</tr>
+
+					<!-- Ollama Settings -->
+					<tr class="tool-settings ollama-settings">
+						<th scope="row"><label for="socratic_ollama_api_key">Ollama API Key (Optional)</label></th>
+						<td>
+							<input type="text" id="socratic_ollama_api_key" name="socratic_ollama_api_key" class="regular-text" value="<?php echo esc_attr( get_option( 'socratic_ollama_api_key' ) ); ?>">
+							<p class="description">Needed if your Ollama instance requires authentication.</p>
+						</td>
+					</tr>
+					<tr class="tool-settings ollama-settings">
+						<th scope="row"><label for="socratic_ollama_model">Ollama Model</label></th>
+						<td>
+							<input type="text" id="socratic_ollama_model" name="socratic_ollama_model" class="regular-text" value="<?php echo esc_attr( get_option( 'socratic_ollama_model' ) ); ?>" placeholder="e.g., llama3.1">
+							<p class="description">Enter the exact name of the Ollama model to use (e.g., llama3.1, mistral).</p>
+						</td>
+					</tr>
+					<tr class="tool-settings ollama-settings">
+						<th scope="row"><label for="socratic_ollama_server_url">Ollama Server URL</label></th>
+						<td>
+							<input type="text" id="socratic_ollama_server_url" name="socratic_ollama_server_url" class="regular-text" value="<?php echo esc_attr( get_option( 'socratic_ollama_server_url', 'http://localhost:11434' ) ); ?>" placeholder="http://localhost:11434">
+							<p class="description">The base URL for your Ollama instance.</p>
 						</td>
 					</tr>
 
