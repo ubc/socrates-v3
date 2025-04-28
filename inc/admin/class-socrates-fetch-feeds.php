@@ -310,34 +310,53 @@ class Socrates_Fetch_Feeds {
 	 */
 	public function generate_prompt() {
 
-		// Add what is in the options as the starting prompt.
-		$prompt_text = $this->get_starting_prompt();
+		// Fetch the new guided settings.
+		$focus_description = wp_kses_post( get_option( 'socratic_notw_focus_description' ) );
+		$emphasis_aspect   = sanitize_text_field( get_option( 'socratic_notw_rating_emphasis_aspect' ) );
+		$categories        = $this->get_content_categories();
 
-		// Ensure the starting prompt ends with a new line.
-		$prompt_text .= "\r\n";
+		// Build the base prompt text using the new settings.
+		$prompt_text  = "You will be provided with a list of blog posts (<blog_posts>...</blog_posts>) containing titles and excerpts.\n";
+		$prompt_text .= 'Your task is to analyze each post and rate its relevance to the main subject area: ' . ( ! empty( $focus_description ) ? $focus_description : '[Main Subject Area not set]' ) . ".\n\n";
 
-		// Now add the categories set in the options.
-		$categories_string = $this->get_content_categories_as_string();
-
-		if ( ! empty( $categories_string ) ) {
-			$prompt_text .= "Use only the following categories: \r\n" . $categories_string;
+		if ( ! empty( $emphasis_aspect ) ) {
+			$prompt_text .= 'When rating, pay specific attention to: ' . $emphasis_aspect . ".\n\n";
+		} else {
+			$prompt_text .= "\n";
 		}
 
+		$prompt_text .= "Assign a score from 1 (least relevant) to 10 (most relevant) and a confidence percentage for your rating.\n";
+		$prompt_text .= "Finally, categorize each post using ONLY ONE of the following categories:\n";
+
+		if ( ! empty( $categories ) ) {
+			foreach ( $categories as $category ) {
+				$prompt_text .= '- ' . $category . "\n";
+			}
+		} else {
+			$prompt_text .= "[No categories set]\n";
+		}
+		$prompt_text .= "- Other (Use this if no other category fits)\n\n";
+
+		$prompt_text .= "Format your response exactly like this for each post, with each post on a new line:\n";
+		$prompt_text .= "Post W :: Score X/10 :: Confidence Y% :: Category Z\n\n";
+
+		$prompt_text .= "Do not include any introductory text, explanations, or anything other than the formatted lines for each post.\n";
+
 		// And now add the blog posts, wrapped in <blog_posts> tags.
-		$prompt_text .= "\r\n";
-		$prompt_text .= "Here are the blog posts:\r\n\r\n";
-		$prompt_text .= "<blog_posts>\r\n";
+		$prompt_text .= "\n";
+		$prompt_text .= "Here are the blog posts:\n\n";
+		$prompt_text .= "<blog_posts>\n";
 
 		foreach ( $this->links as $lid => $link_data ) {
-			$prompt_text .= 'post: ' . $lid + 1 . "\r\n";
-			$prompt_text .= 'title: ' . wp_trim_words( $link_data['title'], 20 ) . "\r\n";
-			$prompt_text .= 'excerpt: ' . wp_trim_words( $link_data['excerpt'], 50 ) . "\r\n";
-			$prompt_text .= "\r\n";
+			$prompt_text .= 'post: ' . ( $lid + 1 ) . "\n"; // Use (lid + 1) for human-readable post numbers starting from 1.
+			$prompt_text .= 'title: ' . wp_trim_words( $link_data['title'], 20 ) . "\n";
+			$prompt_text .= 'excerpt: ' . wp_trim_words( $link_data['excerpt'], 50 ) . "\n";
+			$prompt_text .= "\n";
 		}
 
 		$prompt_text .= '</blog_posts>';
 
-		// this isn't a conversation, so it's just one 'message' we send, but still have
+		// This isn't a conversation, so it's just one 'message' we send, but still have
 		// to formulate it as part of a conversation.
 		$messages = array(
 			array(
@@ -348,16 +367,6 @@ class Socrates_Fetch_Feeds {
 
 		$this->prompt = $messages;
 	}//end generate_prompt()
-
-	/**
-	 * Fetch and set the start of the prompt that is set in the settings.
-	 *
-	 * @return string the starting prompt set in the settings
-	 * @since 3.0.1
-	 */
-	public function get_starting_prompt() {
-		return wp_kses_post( get_option( 'socratic_notw_starting_prompt' ) );
-	}//end get_starting_prompt()
 
 	/**
 	 * Hit the chosen LLM
@@ -372,11 +381,17 @@ class Socrates_Fetch_Feeds {
 		// Send the prompt to the LLM.
 		$request = new Socrates_Send_LLM_Request();
 
+		// Log the prompt being sent to the LLM for debugging purposes.
+		file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'LLM Prompt' => $this->prompt ), true ), FILE_APPEND );
+
 		$request->set_prompt( $this->prompt );
 		$request->send_request();
 
 		// This is the response from the LLM.
 		$data = $request->get_llm_response_data();
+
+		// Log the response from the LLM for debugging purposes.
+		file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'LLM Response' => $data ), true ), FILE_APPEND );
 
 		/*
 		This should look like the following:

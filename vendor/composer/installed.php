@@ -3,7 +3,7 @@
         'name' => '__root__',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'b6fda69289cd53b3366a437994923265384b193a',
+        'reference' => 'f985f20f178a147dea7a5fe529467181bdc5bcd0',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         '__root__' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'b6fda69289cd53b3366a437994923265384b193a',
+            'reference' => 'f985f20f178a147dea7a5fe529467181bdc5bcd0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -25,6 +25,15 @@
             'reference' => '8b2927e434e7d113e5afe8734de90a19c5959273',
             'type' => 'library',
             'install_path' => __DIR__ . '/../alle-ai/anthropic-api-php',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'ardagnsrn/ollama-php' => array(
+            'pretty_version' => '1.0.2',
+            'version' => '1.0.2.0',
+            'reference' => '32a926e3fa14869ceb2018c0360e9a3fcfd4d526',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../ardagnsrn/ollama-php',
             'aliases' => array(),
             'dev_requirement' => false,
         ),
@@ -157,8 +166,8 @@
         'psr/http-client-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
-                0 => '*',
-                1 => '1.0',
+                0 => '1.0',
+                1 => '*',
             ),
         ),
         'psr/http-factory' => array(
@@ -173,8 +182,8 @@
         'psr/http-factory-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
-                0 => '*',
-                1 => '1.0',
+                0 => '1.0',
+                1 => '*',
             ),
         ),
         'psr/http-message' => array(
@@ -189,8 +198,8 @@
         'psr/http-message-implementation' => array(
             'dev_requirement' => false,
             'provided' => array(
-                0 => '*',
-                1 => '1.0',
+                0 => '1.0',
+                1 => '*',
             ),
         ),
         'psr/log' => array(

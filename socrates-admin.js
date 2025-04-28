@@ -311,3 +311,88 @@ document.addEventListener( 'DOMContentLoaded', function() {
     toolSelector.addEventListener( 'change', toggleSettings );
 
 } );
+
+// Dynamic NOTW Prompt Preview Generation
+document.addEventListener('DOMContentLoaded', function() {
+    const focusDescriptionInput = document.getElementById('socratic_notw_focus_description');
+    const emphasisAspectInput = document.getElementById('socratic_notw_rating_emphasis_aspect');
+    const categoriesContainer = document.getElementById('categories-container');
+    const promptPreviewTextarea = document.getElementById('socratic_notw_prompt_preview');
+    const addCategoryButton = document.getElementById('add-category');
+
+    // Check if we are on the correct settings page
+    if (!focusDescriptionInput || !emphasisAspectInput || !categoriesContainer || !promptPreviewTextarea || !addCategoryButton) {
+        return;
+    }
+
+    function updateNotwPromptPreview() {
+        const focusDescription = focusDescriptionInput.value.trim();
+        const emphasisAspect = emphasisAspectInput.value.trim();
+        const categoryInputs = categoriesContainer.querySelectorAll('.category-row input[type="text"]');
+        let categories = [];
+        categoryInputs.forEach(input => {
+            const categoryValue = input.value.trim();
+            if (categoryValue) {
+                categories.push(categoryValue);
+            }
+        });
+
+        let prompt = `You will be provided with a list of blog posts (<blog_posts>...</blog_posts>) containing titles and excerpts.
+Your task is to analyze each post and rate its relevance to the main subject area: ${focusDescription || '[Please define a Main Subject Area]'}.
+\n`;
+
+        if (emphasisAspect) {
+            prompt += `When rating, pay specific attention to: ${emphasisAspect}.\n\n`;
+        } else {
+            prompt += `\n`;
+        }
+
+        prompt += `Assign a score from 1 (least relevant) to 10 (most relevant) and a confidence percentage for your rating.
+Finally, categorize each post using ONLY ONE of the following categories:\n`;
+
+        if (categories.length > 0) {
+            categories.forEach(category => {
+                prompt += `- ${category}\n`;
+            });
+        } else {
+            prompt += `[Please add at least one category]\n`;
+        }
+        prompt += `- Other (Use this if no other category fits)\n\n`;
+
+        prompt += `Format your response exactly like this for each post, with each post on a new line:
+Post W :: Score X/10 :: Confidence Y% :: Category Z
+\n`;
+
+        prompt += `Do not include any introductory text, explanations, or anything other than the formatted lines for each post.`;
+
+        promptPreviewTextarea.value = prompt;
+    }
+
+    // Initial preview generation
+    updateNotwPromptPreview();
+
+    // Event listeners for direct inputs
+    focusDescriptionInput.addEventListener('input', updateNotwPromptPreview);
+    emphasisAspectInput.addEventListener('input', updateNotwPromptPreview);
+
+    // Event listeners for categories container (delegation)
+    categoriesContainer.addEventListener('input', function(e) {
+        if (e.target.tagName === 'INPUT' && e.target.type === 'text') {
+            updateNotwPromptPreview();
+        }
+    });
+
+    categoriesContainer.addEventListener('click', function(e) {
+        // Update preview if a category is deleted
+        if (e.target.classList.contains('delete-category')) {
+            // Use setTimeout to allow the DOM update (row removal) to complete before recalculating
+            setTimeout(updateNotwPromptPreview, 0);
+        }
+    });
+
+    // Event listener for adding a category
+    addCategoryButton.addEventListener('click', function() {
+        // Use setTimeout to allow the DOM update (row addition) to complete before recalculating
+        setTimeout(updateNotwPromptPreview, 0);
+    });
+});

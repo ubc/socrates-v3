@@ -167,15 +167,23 @@ class Socrates_Settings {
 			)
 		);
 
-		// NOTW settings.
 		register_setting(
-			'socrates_notw_settings',
-			'socratic_notw_starting_prompt',
+			'socrates_llm_settings',
+			'socratic_ollama_num_ctx',
 			array(
-				'sanitize_callback' => array( $this, 'sanitize_llm_starting_prompt' ),
+				'sanitize_callback' => 'absint',
 			)
 		);
 
+		register_setting(
+			'socrates_llm_settings',
+			'socratic_ollama_temperature',
+			array(
+				'sanitize_callback' => 'floatval',
+			)
+		);
+
+		// NOTW settings.
 		register_setting(
 			'socrates_notw_settings',
 			'socratic_feeds',
@@ -189,6 +197,22 @@ class Socrates_Settings {
 			'socratic_categories',
 			array(
 				'sanitize_callback' => array( $this, 'sanitize_categories' ),
+			)
+		);
+
+		register_setting(
+			'socrates_notw_settings',
+			'socratic_notw_focus_description',
+			array(
+				'sanitize_callback' => 'wp_kses_post',
+			)
+		);
+
+		register_setting(
+			'socrates_notw_settings',
+			'socratic_notw_rating_emphasis_aspect',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
 			)
 		);
 
@@ -240,6 +264,14 @@ class Socrates_Settings {
 			'socratic_notw_post_category',
 			array(
 				'sanitize_callback' => 'absint',
+			)
+		);
+
+		register_setting(
+			'socrates_notw_settings',
+			'socratic_notw_prompt_preview',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
 			)
 		);
 
@@ -557,6 +589,24 @@ Your reply to this prompt should be the first question to ask the student, and t
 						</td>
 					</tr>
 
+					<!-- Ollama Context Length -->
+					<tr class="tool-settings ollama-settings">
+						<th scope="row"><label for="socratic_ollama_num_ctx">Ollama Context Length</label></th>
+						<td>
+							<input type="number" id="socratic_ollama_num_ctx" name="socratic_ollama_num_ctx" class="small-text" value="<?php echo esc_attr( get_option( 'socratic_ollama_num_ctx', '8192' ) ); ?>">
+							<p class="description">Controls the context window size (number of tokens) the model considers. Default: 8192.</p>
+						</td>
+					</tr>
+
+					<!-- Ollama Temperature -->
+					<tr class="tool-settings ollama-settings">
+						<th scope="row"><label for="socratic_ollama_temperature">Ollama Temperature</label></th>
+						<td>
+							<input type="number" step="0.1" min="0" max="1" id="socratic_ollama_temperature" name="socratic_ollama_temperature" class="small-text" value="<?php echo esc_attr( get_option( 'socratic_ollama_temperature', '0.1' ) ); ?>">
+							<p class="description">Controls the randomness of the output. Lower values (e.g., 0.1) make it more deterministic, higher values (e.g., 0.8) make it more creative. Range: 0.0 to 1.0. Default: 0.1.</p>
+						</td>
+					</tr>
+
 					<?php do_action( 'socrates_tab_output__llm_settings' ); ?>
 
 				</tbody>
@@ -594,8 +644,6 @@ Your reply to this prompt should be the first question to ask the student, and t
 				);
 			}
 
-			$default_notw_starting_prompt = "Here are titles and excerpts for some blog posts. Rate each on a scale of 1-10 with how likely they are to discuss topics loosely connected to the video game industry, i-gaming, technology, digital media, and especially legal topics associated with any of those, with 1 being the least likely and 10 being most likely. Also give a confidence score for each of your ratings as a percentage, the more confident you are in giving the correct rating, the higher the percentage. Finally, for each, provide a category descriptor, i.e. if the post discusses video games, you should categorize the post as 'video games'. Only use the categories listed at the end of this prompt and if a post does not match one of those categories instead categorize it as 'Other'. Your response should be in the format:\r\n\r\nPost W :: Score X/10 :: Confidence Y% :: Category Z\r\n\r\nwhere W is the number of the post, X is your score out of 10, Y is your confidence percentage, and Z is the singular category that best describes the post. Do not write anything other than this for each post. Start each on a new line.";
-
 			// Get the categories data.
 			$categories = get_option( 'socratic_categories' );
 			if ( ! $categories ) {
@@ -605,14 +653,6 @@ Your reply to this prompt should be the first question to ask the student, and t
 
 			<table class="form-table" role="presentation">
 				<tbody>
-					<!-- Starting Prompt field -->
-					<tr>
-						<th scope="row"><label for="starting-prompt">Starting Prompt</label></th>
-						<td>
-							<textarea id="starting-prompt" name="socratic_notw_starting_prompt" rows="13" class="large-text code" cols="50"><?php echo wp_kses_post( str_replace( array( '<br>', '<br/>', '<br />' ), "\n", get_option( 'socratic_notw_starting_prompt', $default_notw_starting_prompt ) ) ); ?></textarea>
-							<p class="description">This is the prompt that is sent to the Large Language Model. The list of links to check and your chosen link categories will also be appended to this prompt.</p>
-						</td>
-					</tr>
 					<!-- NOTW Day field -->
 					<tr>
 						<th scope="row"><label for="socratic_notw_day">News of the Week Post Day</label></th>
@@ -645,6 +685,7 @@ Your reply to this prompt should be the first question to ask the student, and t
 							<p class="description">Into which category should the news of the week post be placed?</p>
 						</td>
 					</tr>
+
 					<!-- Include other categories field -->
 					<tr>
 						<th scope="row">Include "other" category?</th>
@@ -660,6 +701,25 @@ Your reply to this prompt should be the first question to ask the student, and t
 							<p class="description">When the LLM is unable to categorize a link it will place it in the 'other' category. Would you like to include these in your news of the week posts? Other links will be after all other categories.</p>
 						</td>
 					</tr>
+
+					<!-- Main Subject Area field -->
+					<tr>
+						<th scope="row"><label for="socratic_notw_focus_description">Main Subject Area</label></th>
+						<td>
+							<textarea id="socratic_notw_focus_description" name="socratic_notw_focus_description" rows="4" class="large-text code" cols="50"><?php echo esc_textarea( get_option( 'socratic_notw_focus_description' ) ); ?></textarea>
+							<p class="description">Briefly describe the main subject or domain these categories relate to (e.g., 'legal topics in the video game industry', 'developments in renewable energy', 'AI applications in healthcare'). This helps the AI understand the overall context.</p>
+						</td>
+					</tr>
+
+					<!-- Emphasized Aspect field -->
+					<tr>
+						<th scope="row"><label for="socratic_notw_rating_emphasis_aspect">Emphasized Aspect for Rating (Optional)</label></th>
+						<td>
+							<input type="text" id="socratic_notw_rating_emphasis_aspect" name="socratic_notw_rating_emphasis_aspect" value="<?php echo esc_attr( get_option( 'socratic_notw_rating_emphasis_aspect' ) ); ?>" class="regular-text">
+							<p class="description">If desired, specify a particular aspect or viewpoint the AI should prioritize when assessing relevance and assigning scores (e.g., 'ethical implications', 'technical feasibility', 'historical context', 'pedagogical value'). Leave blank for general relevance.</p>
+						</td>
+					</tr>
+
 					<!-- Feeds fields -->
 					<tr>
 						<th scope="row">
@@ -700,6 +760,16 @@ Your reply to this prompt should be the first question to ask the student, and t
 							<button type="button" class="button button-secondary" id="add-category" style="margin-top: 0.5em;">Add Category</button>
 						</td>
 					</tr>
+
+					<!-- Generated Prompt Preview field -->
+					<tr>
+						<th scope="row"><label for="socratic_notw_prompt_preview">Generated Prompt Preview</label></th>
+						<td>
+							<textarea id="socratic_notw_prompt_preview" name="socratic_notw_prompt_preview" rows="15" class="large-text code" cols="50" readonly="readonly"></textarea>
+							<p class="description">This is the prompt that will be constructed based on your settings above and sent to the AI, along with the list of posts to analyze. (This field is not editable).</p>
+						</td>
+					</tr>
+
 					<!-- Threshold Score field -->
 					<tr>
 						<th scope="row"><label for="socratic_minimum_threshold_score">Threshold Score</label></th>
@@ -708,6 +778,7 @@ Your reply to this prompt should be the first question to ask the student, and t
 							<p class="description">Any link that the LLM scores below this threshold will not be added to your links collection.</p>
 						</td>
 					</tr>
+
 					<!-- Link Collection Cadence field -->
 					<tr>
 						<th scope="row"><label for="link-collection-cadence">Link Collection Cadence</label></th>

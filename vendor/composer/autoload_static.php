@@ -60,6 +60,7 @@ class ComposerStaticInit6b08143f4b925c43491bf566c33f7802
         ),
         'A' => 
         array (
+            'ArdaGnsrn\\Ollama\\' => 17,
             'Alle_AI\\Anthropic\\' => 18,
         ),
     );
@@ -87,8 +88,8 @@ class ComposerStaticInit6b08143f4b925c43491bf566c33f7802
         ),
         'Psr\\Http\\Message\\' => 
         array (
-            0 => __DIR__ . '/..' . '/psr/http-message/src',
-            1 => __DIR__ . '/..' . '/psr/http-factory/src',
+            0 => __DIR__ . '/..' . '/psr/http-factory/src',
+            1 => __DIR__ . '/..' . '/psr/http-message/src',
         ),
         'Psr\\Http\\Client\\' => 
         array (
@@ -133,6 +134,10 @@ class ComposerStaticInit6b08143f4b925c43491bf566c33f7802
         'DonatelloZa\\RakePlus\\' => 
         array (
             0 => __DIR__ . '/..' . '/donatello-za/rake-php-plus/src',
+        ),
+        'ArdaGnsrn\\Ollama\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/ardagnsrn/ollama-php/src',
         ),
         'Alle_AI\\Anthropic\\' => 
         array (

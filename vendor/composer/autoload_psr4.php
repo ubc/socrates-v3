@@ -11,7 +11,7 @@ return array(
     'Symfony\\Component\\HttpClient\\' => array($vendorDir . '/symfony/http-client'),
     'Readability\\' => array($vendorDir . '/j0k3r/php-readability/src'),
     'Psr\\Log\\' => array($vendorDir . '/psr/log/src'),
-    'Psr\\Http\\Message\\' => array($vendorDir . '/psr/http-message/src', $vendorDir . '/psr/http-factory/src'),
+    'Psr\\Http\\Message\\' => array($vendorDir . '/psr/http-factory/src', $vendorDir . '/psr/http-message/src'),
     'Psr\\Http\\Client\\' => array($vendorDir . '/psr/http-client/src'),
     'Psr\\Container\\' => array($vendorDir . '/psr/container/src'),
     'OpenAI\\' => array($vendorDir . '/openai-php/client/src'),
@@ -23,5 +23,6 @@ return array(
     'GuzzleHttp\\Promise\\' => array($vendorDir . '/guzzlehttp/promises/src'),
     'GuzzleHttp\\' => array($vendorDir . '/guzzlehttp/guzzle/src'),
     'DonatelloZa\\RakePlus\\' => array($vendorDir . '/donatello-za/rake-php-plus/src'),
+    'ArdaGnsrn\\Ollama\\' => array($vendorDir . '/ardagnsrn/ollama-php/src'),
     'Alle_AI\\Anthropic\\' => array($vendorDir . '/alle-ai/anthropic-api-php/src'),
 );
