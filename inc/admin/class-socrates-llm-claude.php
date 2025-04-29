@@ -36,7 +36,6 @@ class Socrates_LLM_Claude {
 
 	/**
 	 * Will be filled with the model version stored in the options.
-	 *
 	 */
 	var $model_version = '';
 
@@ -51,7 +50,6 @@ class Socrates_LLM_Claude {
 		$this->set_api_key();
 		$this->set_model();
 		$this->set_model_version();
-
 	}//end __construct()
 
 
@@ -64,7 +62,6 @@ class Socrates_LLM_Claude {
 	public function set_api_key() {
 
 		$this->api_key = esc_attr( get_option( 'socratic_anthropic_api_key' ) );
-
 	}//end set_api_key()
 
 
@@ -77,7 +74,6 @@ class Socrates_LLM_Claude {
 	public function set_model() {
 
 		$this->model = esc_html( get_option( 'socratic_anthropic_model', 'claude-2' ) );
-
 	}//end set_model()
 
 
@@ -90,7 +86,6 @@ class Socrates_LLM_Claude {
 	public function set_model_version() {
 
 		$this->model_version = esc_html( get_option( 'socratic_anthropic_model_version', '2023-06-01' ) );
-
 	}//end set_model_version()
 
 
@@ -106,7 +101,6 @@ class Socrates_LLM_Claude {
 		$client = new \Alle_AI\Anthropic\AnthropicAPI( $this->api_key, $this->model_version );
 
 		return $client;
-
 	}//end get_client()
 
 
@@ -114,14 +108,15 @@ class Socrates_LLM_Claude {
 	 * Formulate the request we're going to send.
 	 *
 	 * @param  array $request_params
-	 * 				     'messages' : the full set of messages sent to the LLM
+	 *                   'messages' : the full set of messages sent to the LLM
 	 *                   'model'  : the model we wish to use
 	 *                   This is filtered, so other data may be available.
 	 *
+	 * @param  bool  $use_json_mode Optional. Whether JSON mode is intended (affects response parsing). Defaults to false.
 	 * @return mixed the fully-formed request we're going to make
 	 * @since
 	 */
-	public function get_request( $request_params = array() ) {
+	public function get_request( $request_params = array(), $use_json_mode = false ) {
 
 		/*
 		 * Anthropic's API requires a very specific request format.
@@ -131,14 +126,14 @@ class Socrates_LLM_Claude {
 			'model' => 'claude-2',
 			'max_tokens_to_sample' => 300,
 			'stop_sequences' => array("\n\nHuman:")
-		   );
+			);
 		 *
 		 */
 
 		// We need to convert the messages array to the Anthropic format.
 		$prompt = $this->generate_prompt_from_messages( $request_params['messages'] );
 
-		$model  = $this->model;
+		$model = $this->model;
 
 		// Currently hardcoded.
 		// @todo: Make these settable somehow? Maybe?
@@ -146,14 +141,13 @@ class Socrates_LLM_Claude {
 		$stop_sequences       = array( "\n\nHuman:" );
 
 		$request = array(
-			'prompt' => $prompt,
-			'model' => $model,
+			'prompt'               => $prompt,
+			'model'                => $model,
 			'max_tokens_to_sample' => $max_tokens_to_sample,
-			'stop_sequences' => $stop_sequences,
+			'stop_sequences'       => $stop_sequences,
 		);
 
 		return $request;
-
 	}//end get_request()
 
 
@@ -187,7 +181,6 @@ class Socrates_LLM_Claude {
 		$prompt .= "\n\nAssistant:";
 
 		return $prompt;
-
 	}//end generate_prompt_from_messages()
 
 
@@ -197,7 +190,7 @@ class Socrates_LLM_Claude {
 	 *
 	 * @param  mixed $client
 	 * @param  array $request
-	 * 			'model'    : the model we wish to use
+	 *          'model'    : the model we wish to use
 	 *          'messages' : the full set of messages to send to the LLM
 	 *
 	 * @return mixed the data returned by the LLM
@@ -208,7 +201,6 @@ class Socrates_LLM_Claude {
 		$data = $client->generateText( $request );
 
 		return $data;
-
 	}//end make_request()
 
 
@@ -217,11 +209,12 @@ class Socrates_LLM_Claude {
 	 * Just return the response string.
 	 *
 	 * @param  array $llm_response_data
+	 * @param  bool  $use_json_mode Optional. Whether JSON mode was used for the request. Defaults to false.
 	 *
-	 * @return void
+	 * @return string|array|null The response string, parsed JSON array, or null/error string on failure.
 	 * @since 3.0.0
 	 */
-	public function get_response_string( $llm_response_data ) {
+	public function get_response_string( $llm_response_data, $use_json_mode = false ) {
 
 		// Test if we have caught an error.
 		if ( is_array( $llm_response_data ) && isset( $llm_response_data['error'] ) && is_array( $llm_response_data['error'] ) ) {
@@ -236,9 +229,25 @@ class Socrates_LLM_Claude {
 		// Isn't an error, so let's grab the 'completion'.
 		$response_string = $llm_response_data['completion'];
 
+		// If JSON mode was used, decode and validate.
+		if ( $use_json_mode ) {
+			$decoded_json = json_decode( $response_string, true ); // Decode as associative array.
+
+			// Check for JSON decoding errors.
+			if ( json_last_error() !== JSON_ERROR_NONE ) {
+				file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Claude JSON Decode Error' => json_last_error_msg(), 'Content Received' => $response_string ), true ), FILE_APPEND ); // phpcs:ignore
+				return null; // Indicate failure.
+			}
+
+			// Basic validation: Ensure it's an array.
+			if ( ! is_array( $decoded_json ) ) {
+				file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Claude JSON Validation Error' => 'Decoded JSON is not an array.', 'Content Received' => $response_string ), true ), FILE_APPEND ); // phpcs:ignore
+				return null; // Indicate failure.
+			}
+
+			return $decoded_json; // Return the successfully decoded array.
+		}
+
 		return $response_string;
-
 	}//end get_response_string()
-
-
 }//end class

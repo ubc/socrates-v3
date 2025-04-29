@@ -359,11 +359,30 @@ Finally, categorize each post using ONLY ONE of the following categories:\n`;
         }
         prompt += `- Other (Use this if no other category fits)\n\n`;
 
-        prompt += `Format your response exactly like this for each post, with each post on a new line:
-Post W :: Score X/10 :: Confidence Y% :: Category Z
-\n`;
+        prompt += `Your response MUST be a single valid JSON object.\n`;
+        prompt += `This JSON object must contain a single key named "results".\n`;
+        prompt += `The value of the "results" key MUST be a JSON array.\n`;
+        prompt += `Each element in the "results" array MUST be a JSON object corresponding to one of the analyzed blog posts.\n`;
+        prompt += `Each post object within the "results" array MUST have the following structure and keys: \n`;
+        prompt += '`{"post_id": number, "score": number, "confidence": number, "category": "string"}`\n\n';
 
-        prompt += `Do not include any introductory text, explanations, or anything other than the formatted lines for each post.`;
+        prompt += `Example Input Posts:\n`;
+        prompt += `post: 1\n`;
+        prompt += `title: AI Wins Art Prize\n`;
+        prompt += `excerpt: An AI generated image won first place... implications for copyright...\n`;
+        prompt += `post: 2\n`;
+        prompt += `title: New Mario Game Announced\n`;
+        prompt += `excerpt: Nintendo revealed the next installment... no legal issues mentioned...\n\n`;
+
+        prompt += `Example JSON Object Output (containing a "results" array with objects for the two example posts):\n`;
+        prompt += '`{\n';
+        prompt += `  "results": [\n`;
+        prompt += `    {"post_id": 1, "score": 8, "confidence": 95, "category": "Copyright"},\n`;
+        prompt += `    {"post_id": 2, "score": 2, "confidence": 60, "category": "Other"}\n`;
+        prompt += `  ]\n`;
+        prompt += `}\`\n\n`;
+
+        prompt += `Ensure the final output is ONLY the single JSON object (starting with \`{\` and ending with \`}\`), with no introductory text, explanations, or markdown formatting around the JSON itself.`;
 
         promptPreviewTextarea.value = prompt;
     }

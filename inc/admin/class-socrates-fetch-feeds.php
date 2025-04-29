@@ -315,7 +315,7 @@ class Socrates_Fetch_Feeds {
 		$emphasis_aspect   = sanitize_text_field( get_option( 'socratic_notw_rating_emphasis_aspect' ) );
 		$categories        = $this->get_content_categories();
 
-		// Build the base prompt text using the new settings.
+		// Build the base prompt text using the new settings, asking for JSON output.
 		$prompt_text  = "You will be provided with a list of blog posts (<blog_posts>...</blog_posts>) containing titles and excerpts.\n";
 		$prompt_text .= 'Your task is to analyze each post and rate its relevance to the main subject area: ' . ( ! empty( $focus_description ) ? $focus_description : '[Main Subject Area not set]' ) . ".\n\n";
 
@@ -325,7 +325,7 @@ class Socrates_Fetch_Feeds {
 			$prompt_text .= "\n";
 		}
 
-		$prompt_text .= "Assign a score from 1 (least relevant) to 10 (most relevant) and a confidence percentage for your rating.\n";
+		$prompt_text .= "Assign a score from 1 (least relevant) to 10 (most relevant) and a confidence percentage (0-100) for your rating.\n";
 		$prompt_text .= "Finally, categorize each post using ONLY ONE of the following categories:\n";
 
 		if ( ! empty( $categories ) ) {
@@ -337,10 +337,30 @@ class Socrates_Fetch_Feeds {
 		}
 		$prompt_text .= "- Other (Use this if no other category fits)\n\n";
 
-		$prompt_text .= "Format your response exactly like this for each post, with each post on a new line:\n";
-		$prompt_text .= "Post W :: Score X/10 :: Confidence Y% :: Category Z\n\n";
+		$prompt_text .= "Your response MUST be a single valid JSON object.\n";
+		$prompt_text .= "This JSON object must contain a single key named \"results\".\n";
+		$prompt_text .= "The value of the \"results\" key MUST be a JSON array.\n";
+		$prompt_text .= "Each element in the \"results\" array MUST be a JSON object corresponding to one of the analyzed blog posts.\n";
+		$prompt_text .= "Each post object within the \"results\" array MUST have the following structure and keys: \n";
+		$prompt_text .= "`{\"post_id\": number, \"score\": number, \"confidence\": number, \"category\": \"string\"}`\n\n";
 
-		$prompt_text .= "Do not include any introductory text, explanations, or anything other than the formatted lines for each post.\n";
+		$prompt_text .= "Example Input Posts:\n";
+		$prompt_text .= "post: 1\n";
+		$prompt_text .= "title: AI Wins Art Prize\n";
+		$prompt_text .= "excerpt: An AI generated image won first place... implications for copyright...\n";
+		$prompt_text .= "post: 2\n";
+		$prompt_text .= "title: New Mario Game Announced\n";
+		$prompt_text .= "excerpt: Nintendo revealed the next installment... no legal issues mentioned...\n\n";
+
+		$prompt_text .= "Example JSON Object Output (containing a \"results\" array with objects for the two example posts):\n";
+		$prompt_text .= "`{\n";
+		$prompt_text .= "  \"results\": [\n";
+		$prompt_text .= "    {\"post_id\": 1, \"score\": 8, \"confidence\": 95, \"category\": \"Copyright\"},\n";
+		$prompt_text .= "    {\"post_id\": 2, \"score\": 2, \"confidence\": 60, \"category\": \"Other\"}\n";
+		$prompt_text .= "  ]\n";
+		$prompt_text .= "}`\n\n";
+
+		$prompt_text .= "Ensure the final output is ONLY the single JSON object (starting with `{` and ending with `}`), with no introductory text, explanations, or markdown formatting around the JSON itself.\n";
 
 		// And now add the blog posts, wrapped in <blog_posts> tags.
 		$prompt_text .= "\n";
@@ -385,21 +405,17 @@ class Socrates_Fetch_Feeds {
 		file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'LLM Prompt' => $this->prompt ), true ), FILE_APPEND );
 
 		$request->set_prompt( $this->prompt );
-		$request->send_request();
+		$request->send_request( true ); // Request JSON mode.
 
 		// This is the response from the LLM.
-		$data = $request->get_llm_response_data();
+		// Get the potentially parsed response (array if JSON is successful, string/null otherwise).
+		$parsed_llm_data = $request->get_llm_response_data( true );
 
 		// Log the response from the LLM for debugging purposes.
-		file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'LLM Response' => $data ), true ), FILE_APPEND );
+		file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'LLM Parsed Response' => $parsed_llm_data ), true ), FILE_APPEND );
 
-		/*
-		This should look like the following:
-		Post 1 :: Score 2/10 :: Confidence 80% :: Climate Change
-		Post 2 :: Score 7/10 :: Confidence 90% :: Legal
-		... etc
-		*/
-		$this->llm_response = $data;
+		// Store the parsed data (could be array, string on error, or null).
+		$this->llm_response = $parsed_llm_data;
 	}//end use_llm_to_categorize_and_rate_links()
 
 	/**
@@ -411,14 +427,19 @@ class Socrates_Fetch_Feeds {
 	 */
 	public function get_raw_data_for_bookmarks() {
 
-		// Ensure we have a response, bail otherwise.
-		if ( false === $this->llm_response ) {
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( __FILE__, __LINE__, 'No LLM Response' ), true ), FILE_APPEND ); // phpcs:ignore
-			return;
+		// Check if the LLM response is a valid array (successful JSON parse).
+		if ( ! is_array( $this->llm_response ) ) {
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( __FILE__, __LINE__, 'LLM Response is not a valid array. Cannot process bookmarks.', 'Response' => $this->llm_response ), true ), FILE_APPEND ); // phpcs:ignore
+			return array(); // Return empty array on error or non-array response.
 		}
 
-		// Convert the LLM response into a usable array.
-		$llm_response_as_array = $this->convert_llm_response_to_array();
+		// Check if the array is nested under a 'results' key (common with ChatGPT JSON mode).
+		if ( isset( $this->llm_response['results'] ) && is_array( $this->llm_response['results'] ) ) {
+			$parsed_llm_data = $this->llm_response['results'];
+		} else {
+			// Assume the response is the array directly.
+			$parsed_llm_data = $this->llm_response;
+		}
 
 		// Score must be higher than this for it to make it into the bookmarks.
 		$threshold_score = $this->get_threshold_score();
@@ -426,9 +447,28 @@ class Socrates_Fetch_Feeds {
 		$usable_data = array();
 
 		// Now combine the LLM response, with our links. Only add if the link meets the threshold.
-		foreach ( $this->links as $lid => $link ) {
+		// The LLM response array ($parsed_llm_data) should have keys corresponding to the post_id - 1.
+		// Iterate through the parsed data directly.
+		foreach ( $parsed_llm_data as $link_data ) {
 
-			$this_links_score = $this->convert_score_out_of_10_to_integer( $llm_response_as_array[ $lid ]['score'] );
+			// Validate the structure of the current item.
+			if ( ! isset( $link_data['post_id'], $link_data['score'], $link_data['category'], $link_data['confidence'] ) ) {
+				file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( __FILE__, __LINE__, 'Skipping invalid link data item', 'Item' => $link_data ), true ), FILE_APPEND ); // phpcs:ignore
+				continue;
+			}
+
+			$post_id          = absint( $link_data['post_id'] );
+			$this_links_score = absint( $link_data['score'] ); // Score should be an integer directly from JSON.
+			$category         = sanitize_text_field( $link_data['category'] );
+			$confidence       = absint( $link_data['confidence'] ); // Confidence should be an integer.
+
+			// Find the corresponding original link data using post_id (adjusting for 0-based index).
+			$original_link_index = $post_id - 1;
+			if ( ! isset( $this->links[ $original_link_index ] ) ) {
+				file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( __FILE__, __LINE__, 'Could not find original link data for post_id', 'post_id' => $post_id ), true ), FILE_APPEND ); // phpcs:ignore
+				continue;
+			}
+			$link = $this->links[ $original_link_index ];
 
 			if ( $this_links_score < $threshold_score ) {
 				continue;
@@ -440,101 +480,14 @@ class Socrates_Fetch_Feeds {
 				'url'        => $link['url'],
 				'excerpt'    => $link['excerpt'],
 				'score'      => $this_links_score,
-				'category'   => $llm_response_as_array[ $lid ]['category'],
-				'confidence' => $llm_response_as_array[ $lid ]['confidence'],
+				'category'   => $category,
+				'confidence' => $confidence,
 			);
 
 		}
 
 		return $usable_data;
 	}//end get_raw_data_for_bookmarks()
-
-	/**
-	 * Convert the llm response string to a usable array which we're then able
-	 * to compared against the links we fetched.
-	 *
-	 * Converts:
-	 * Post 1 :: Score 2/10 :: Confidence 80% :: Category None
-	 * Post 2 :: Score 2/10 :: Confidence 70% :: Category Legal
-	 *
-	 * Into:
-	 * array(
-	 *     0 => array(
-	 *         'post_id' => 1,
-	 *         'score' => 2/10,
-	 *         'confidence' => 80%,
-	 *         'category' => 'none'
-	 *     ),
-	 *     1 => array(
-	 *         'post_id' => 2,
-	 *         'score' => 2/10,
-	 *         'confidence' => 70%,
-	 *         'category' => 'Legal'
-	 *     ),
-	 * )
-	 *
-	 * Note the ID of the items is the array isn't the same as the post_id because the LLM spits out
-	 * posts starting at 1, not 0.
-	 *
-	 * @return array each item is a line of the response, with each subarray containing the score, confidence, and category
-	 * @since
-	 */
-	public function convert_llm_response_to_array() {
-
-		$lines_of_response = preg_split( "/\r\n|\n|\r/", $this->llm_response );
-
-		$usable_array = array();
-
-		foreach ( $lines_of_response as $lineid => $line_text ) {
-
-			// Ensure this is a scored line, i.e. no other details.
-			// Use a regex to match lines starting with 'Post ' or 'post ' followed by an ID.
-			if ( ! preg_match( '/^post\s+\d+\s*::/i', $line_text ) ) {
-				continue;
-			}
-
-			// Split by the :: delimiter and create usable variables for each of the parts.
-			list( $post_id, $score, $confidence, $category ) = explode( ' :: ', $line_text );
-
-			// trim the unnecessary fat.
-			$post_id    = trim( preg_replace( '/^post\s+/i', '', $post_id ) );
-			$score      = trim( preg_replace( '/^score\s+/i', '', $score ) );
-			$confidence = trim( preg_replace( '/^confidence\s+/i', '', $confidence ) );
-			$category   = trim( preg_replace( '/^category\s+/i', '', $category ) );
-
-			$article_number = absint( $post_id ) - 1;
-
-			$usable_array[ $article_number ] = array(
-				'post_id'    => $post_id,
-				'score'      => $score,
-				'confidence' => $confidence,
-				'category'   => $category,
-			);
-
-		}
-
-		return $usable_array;
-	}//end convert_llm_response_to_array()
-
-	/**
-	 * Convert a score of something like 5/10 or 9/10 (i.e. x/10) to an integer
-	 * so that we can then set a threshold and compare.
-	 *
-	 * @param  string $score the score to convert to an int
-	 *
-	 * @return int
-	 * @since 3.0.1
-	 */
-	public function convert_score_out_of_10_to_integer( $score ) {
-
-		$score = trim( $score ); // 5/10
-
-		list( $rating, $denominator ) = explode( '/', $score ); // $rating = 5; $denominator = 10;
-
-		$rating = absint( $rating ); // 5
-
-		return $rating;
-	}//end convert_score_out_of_10_to_integer()
 
 	/**
 	 * The minimum threshold score

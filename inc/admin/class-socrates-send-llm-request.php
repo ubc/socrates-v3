@@ -223,10 +223,11 @@ class Socrates_Send_LLM_Request {
 	/**
 	 * Calls the specific LLM Class to get the actual request we'll make against the LLM.
 	 *
+	 * @param bool $use_json_mode Optional. Whether to request JSON mode. Defaults to false.
 	 * @return void
 	 * @since
 	 */
-	public function set_request() {
+	public function set_request( $use_json_mode = false ) {
 
 		$request_params = array(
 			'model'    => $this->model,
@@ -245,7 +246,7 @@ class Socrates_Send_LLM_Request {
 		$request_params = apply_filters( 'socrates_v3_llm_request_params', $request_params );
 
 		// Get the LLM Class to generate the full request we need to send.
-		$request = $this->client_class->get_request( $request_params );
+		$request = $this->client_class->get_request( $request_params, $use_json_mode );
 
 		// Store this request locally.
 		$this->request = $request;
@@ -255,13 +256,14 @@ class Socrates_Send_LLM_Request {
 	/**
 	 * Send the request to the LLM and set the response locally.
 	 *
+	 * @param bool $use_json_mode Optional. Whether to request JSON mode. Defaults to false.
 	 * @return mixed $data The data returned from the LLM.
 	 * @since 3.0.1
 	 */
-	public function send_request() {
+	public function send_request( $use_json_mode = false ) {
 
 		// The actual request we'll make against the LLM, is created within the specific LLM class.
-		$this->set_request();
+		$this->set_request( $use_json_mode );
 
 		$data = $this->client_class->make_request( $this->client, $this->request );
 
@@ -272,23 +274,25 @@ class Socrates_Send_LLM_Request {
 	/**
 	 * Retrieves the data the LLM has sent back.
 	 *
+	 * @param bool $use_json_mode Optional. Whether the request used JSON mode. Defaults to false.
 	 * @return mixed the data returned by the LLM.
 	 * @since 3.0.1
 	 */
-	public function get_llm_response_data() {
+	public function get_llm_response_data( $use_json_mode = false ) {
 
-		return $this->abstract_data_from_llm_response();
+		return $this->abstract_data_from_llm_response( $use_json_mode );
 	}//end get_llm_response_data()
 
 
 	/**
 	 * We have a raw response from the LLM, but we need just the response text.
 	 *
+	 * @param bool $use_json_mode Optional. Whether the request used JSON mode. Defaults to false.
 	 * @return string The response string from the LLM
 	 * @since 3.0.1
 	 */
-	public function abstract_data_from_llm_response() {
+	public function abstract_data_from_llm_response( $use_json_mode = false ) {
 
-		return $this->client_class->get_response_string( $this->llm_response_data );
+		return $this->client_class->get_response_string( $this->llm_response_data, $use_json_mode );
 	}//end abstract_data_from_llm_response()
 }

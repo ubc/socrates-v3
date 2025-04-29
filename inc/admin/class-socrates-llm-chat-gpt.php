@@ -73,16 +73,22 @@ class Socrates_LLM_Chat_Gpt {
 	 *                   'messages' : the full set of messages sent to ChatGPT
 	 *                   'model'  : the model we wish to use
 	 *                   This is filtered, so other data may be available.
+	 * @param  bool  $use_json_mode Optional. Whether to request JSON output mode. Defaults to false.
 	 *
 	 * @return mixed the fully-formed request we're going to make
 	 * @since
 	 */
-	public function get_request( $request_params = array() ) {
+	public function get_request( $request_params = array(), $use_json_mode = false ) {
 
 		$request = array(
 			'model'    => $request_params['model'],
 			'messages' => $request_params['messages'],
 		);
+
+		// Add JSON mode parameter if requested.
+		if ( $use_json_mode ) {
+			$request['response_format'] = array( 'type' => 'json_object' );
+		}
 
 		return $request;
 	}//end get_request()
@@ -132,11 +138,12 @@ class Socrates_LLM_Chat_Gpt {
 	 * Just return the response string.
 	 *
 	 * @param  array $llm_response_data
+	 * @param  bool  $use_json_mode Optional. Whether JSON mode was used for the request. Defaults to false.
 	 *
-	 * @return string Just the response string
+	 * @return string|array|null The response string, parsed JSON array, or null/error string on failure.
 	 * @since 3.0.1
 	 */
-	public function get_response_string( $llm_response_data ) {
+	public function get_response_string( $llm_response_data, $use_json_mode = false ) {
 
 		$response_string = false;
 
@@ -157,6 +164,25 @@ class Socrates_LLM_Chat_Gpt {
 		if ( false === $response_string ) {
 			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Response was false.' ), true ), FILE_APPEND ); // phpcs:ignore
 			return 'Error: ' . __FILE__ . ' :: ' . __LINE__;
+		}
+
+		// If JSON mode was used, decode and validate.
+		if ( $use_json_mode ) {
+			$decoded_json = json_decode( $response_string, true ); // Decode as associative array.
+
+			// Check for JSON decoding errors.
+			if ( json_last_error() !== JSON_ERROR_NONE ) {
+				file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'ChatGPT JSON Decode Error' => json_last_error_msg(), 'Content Received' => $response_string ), true ), FILE_APPEND ); // phpcs:ignore
+				return null; // Indicate failure.
+			}
+
+			// Basic validation: Ensure it's an array.
+			if ( ! is_array( $decoded_json ) ) {
+				file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'ChatGPT JSON Validation Error' => 'Decoded JSON is not an array.', 'Content Received' => $response_string ), true ), FILE_APPEND ); // phpcs:ignore
+				return null; // Indicate failure.
+			}
+
+			return $decoded_json; // Return the successfully decoded array.
 		}
 
 		return $response_string;

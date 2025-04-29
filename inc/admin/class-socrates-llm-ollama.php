@@ -96,10 +96,10 @@ class Socrates_LLM_Ollama {
 	 * Formats the request payload for the Ollama API (using ardagnsrn/ollama-php format).
 	 *
 	 * @param array $request_params Associative array containing 'messages'.
-	 * @param bool  $use_json_mode  Whether to request JSON output (currently ignored for request format, handled in response).
+	 * @param bool  $use_json_mode  Whether to request JSON output.
 	 * @return array The formatted request array.
 	 */
-	public function get_request( $request_params, $use_json_mode = false ) { // phpcs:ignore VariableAnalysis.CodeAnalysis.VariableAnalysis.UnusedVariable
+	public function get_request( $request_params, $use_json_mode = false ) {
 		$request = array(
 			'model'    => $this->model,
 			'messages' => $request_params['messages'],
@@ -110,10 +110,11 @@ class Socrates_LLM_Ollama {
 			),
 		);
 
-		// Note: 'format' => 'json' is deferred to Task 5.
-		// if ( $use_json_mode ) {
-		// $request['format'] = 'json';
-		// }
+		// Add JSON format parameter if requested.
+		if ( $use_json_mode ) {
+			$request['format'] = 'json';
+			// JSON mode requires streaming to be off, which we already ensure above.
+		}
 
 		return $request;
 	}
@@ -165,6 +166,8 @@ class Socrates_LLM_Ollama {
 		if ( is_array( $llm_response_data ) && isset( $llm_response_data['error'] ) && true === $llm_response_data['error'] ) {
 			return 'Error: ' . $llm_response_data['message'];
 		}
+
+		file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Ollama Response Data' => $llm_response_data ), true ), FILE_APPEND ); // phpcs:ignore
 
 		// Validate the response object structure from ardagnsrn/ollama-php.
 		// We expect a ChatResponse object with a public message property containing a ChatMessageResponse object.

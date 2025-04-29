@@ -653,60 +653,12 @@ Your reply to this prompt should be the first question to ask the student, and t
 
 			<table class="form-table" role="presentation">
 				<tbody>
-					<!-- NOTW Day field -->
-					<tr>
-						<th scope="row"><label for="socratic_notw_day">News of the Week Post Day</label></th>
-						<td>
-							<select id="socratic_notw_day" name="socratic_notw_day">
-								<?php
-								$options        = array( 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' );
-								$current_option = get_option( 'socratic_notw_day' );
-								foreach ( $options as $option ) {
-									echo '<option value="' . esc_attr( $option ) . '"' . selected( $current_option, $option, false ) . '>' . esc_html( $option ) . '</option>';
-								}
-								?>
-							</select>
-							<p class="description">On what day will the news of the week post be created?</p>
-						</td>
-					</tr>
-					<!-- NEws of the week category field -->
-					<tr>
-						<th scope="row">News of the Week Post Category</th>
-						<td>
-							<?php
-								$notw_categories = $this->get_post_categories_for_notw_category();
-								$current_value   = get_option( 'socratic_notw_post_category' );
-								echo '<select name="socratic_notw_post_category" name="socratic_notw_post_category">';
-							foreach ( $notw_categories as $category ) {
-								echo '<option value="' . esc_attr( $category->term_id ) . '"' . selected( $category->term_id, $current_value, false ) . '>' . esc_html( $category->name ) . '</option>';
-							}
-								echo '</select>';
-							?>
-							<p class="description">Into which category should the news of the week post be placed?</p>
-						</td>
-					</tr>
-
-					<!-- Include other categories field -->
-					<tr>
-						<th scope="row">Include "other" category?</th>
-						<td>
-							<?php
-								$include_other_cat = get_option( 'socratic_include_other_category_links' );
-							if ( ! $include_other_cat || empty( $include_other_cat ) ) {
-								$include_other_cat = 'no';
-							}
-							?>
-							<?php echo '<label><input type="radio" name="socratic_include_other_category_links" value="yes"' . checked( 'yes', $include_other_cat, false ) . '>Yes</label>'; ?>
-							<?php echo '<label><input type="radio" name="socratic_include_other_category_links" value="no"' . checked( 'no', $include_other_cat, false ) . '>No</label>'; ?>
-							<p class="description">When the LLM is unable to categorize a link it will place it in the 'other' category. Would you like to include these in your news of the week posts? Other links will be after all other categories.</p>
-						</td>
-					</tr>
 
 					<!-- Main Subject Area field -->
 					<tr>
 						<th scope="row"><label for="socratic_notw_focus_description">Main Subject Area</label></th>
 						<td>
-							<textarea id="socratic_notw_focus_description" name="socratic_notw_focus_description" rows="4" class="large-text code" cols="50"><?php echo esc_textarea( get_option( 'socratic_notw_focus_description' ) ); ?></textarea>
+							<textarea id="socratic_notw_focus_description" name="socratic_notw_focus_description" rows="3" class="large-text code" cols="50"><?php echo esc_textarea( get_option( 'socratic_notw_focus_description' ) ); ?></textarea>
 							<p class="description">Briefly describe the main subject or domain these categories relate to (e.g., 'legal topics in the video game industry', 'developments in renewable energy', 'AI applications in healthcare'). This helps the AI understand the overall context.</p>
 						</td>
 					</tr>
@@ -767,6 +719,55 @@ Your reply to this prompt should be the first question to ask the student, and t
 						<td>
 							<textarea id="socratic_notw_prompt_preview" name="socratic_notw_prompt_preview" rows="15" class="large-text code" cols="50" readonly="readonly"></textarea>
 							<p class="description">This is the prompt that will be constructed based on your settings above and sent to the AI, along with the list of posts to analyze. (This field is not editable).</p>
+						</td>
+					</tr>
+
+					<!-- NOTW Day field -->
+					<tr>
+						<th scope="row"><label for="socratic_notw_day">News of the Week Post Day</label></th>
+						<td>
+							<select id="socratic_notw_day" name="socratic_notw_day">
+								<?php
+								$options        = array( 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday' );
+								$current_option = get_option( 'socratic_notw_day' );
+								foreach ( $options as $option ) {
+									echo '<option value="' . esc_attr( $option ) . '"' . selected( $current_option, $option, false ) . '>' . esc_html( $option ) . '</option>';
+								}
+								?>
+							</select>
+							<p class="description">On what day will the news of the week post be created?</p>
+						</td>
+					</tr>
+					<!-- NEws of the week category field -->
+					<tr>
+						<th scope="row">News of the Week Post Category</th>
+						<td>
+							<?php
+								$notw_categories = $this->get_post_categories_for_notw_category();
+								$current_value   = get_option( 'socratic_notw_post_category' );
+								echo '<select name="socratic_notw_post_category" name="socratic_notw_post_category">';
+							foreach ( $notw_categories as $category ) {
+								echo '<option value="' . esc_attr( $category->term_id ) . '"' . selected( $category->term_id, $current_value, false ) . '>' . esc_html( $category->name ) . '</option>';
+							}
+								echo '</select>';
+							?>
+							<p class="description">Into which category should the news of the week post be placed?</p>
+						</td>
+					</tr>
+
+					<!-- Include other categories field -->
+					<tr>
+						<th scope="row">Include "other" category?</th>
+						<td>
+							<?php
+								$include_other_cat = get_option( 'socratic_include_other_category_links' );
+							if ( ! $include_other_cat || empty( $include_other_cat ) ) {
+								$include_other_cat = 'no';
+							}
+							?>
+							<?php echo '<label><input type="radio" name="socratic_include_other_category_links" value="yes"' . checked( 'yes', $include_other_cat, false ) . '>Yes</label>'; ?>
+							<?php echo '<label><input type="radio" name="socratic_include_other_category_links" value="no"' . checked( 'no', $include_other_cat, false ) . '>No</label>'; ?>
+							<p class="description">When the LLM is unable to categorize a link it will place it in the 'other' category. Would you like to include these in your news of the week posts? Other links will be after all other categories.</p>
 						</td>
 					</tr>
 
