@@ -275,8 +275,10 @@ class Socrates_Send_LLM_Request {
 	 * Retrieves the data the LLM has sent back.
 	 *
 	 * @param bool $use_json_mode Optional. Whether the request used JSON mode. Defaults to false.
-	 * @return mixed the data returned by the LLM.
-	 * @since 3.0.1
+	 * @return mixed If JSON mode, returns parsed array or null/error string on failure.
+	 *               If not JSON mode, returns array ['reasoning' => string|null, 'response' => string].
+	 *               Returns error string if the initial response indicates an error.
+	 * @since 3.0.1 (Modified in 3.5.0 to reflect reasoning return type)
 	 */
 	public function get_llm_response_data( $use_json_mode = false ) {
 
@@ -286,10 +288,13 @@ class Socrates_Send_LLM_Request {
 
 	/**
 	 * We have a raw response from the LLM, but we need just the response text.
+	 * This method calls the appropriate method in the specific LLM class.
 	 *
 	 * @param bool $use_json_mode Optional. Whether the request used JSON mode. Defaults to false.
-	 * @return string The response string from the LLM
-	 * @since 3.0.1
+	 * @return mixed If JSON mode, returns parsed array or null/error string on failure.
+	 *               If not JSON mode, returns array ['reasoning' => string|null, 'response' => string].
+	 *               Returns error string if the initial response indicates an error.
+	 * @since 3.0.1 (Modified in 3.5.0 to reflect reasoning return type)
 	 */
 	public function abstract_data_from_llm_response( $use_json_mode = false ) {
 

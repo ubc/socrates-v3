@@ -93,6 +93,14 @@ class Socrates_Settings {
 			)
 		);
 
+		register_setting(
+			'socrates_socrates_settings',
+			'socratic_show_reasoning',
+			array(
+				'sanitize_callback' => array( $this, 'sanitize_checkbox' ),
+			)
+		);
+
 		// LLM settings.
 		register_setting(
 			'socrates_llm_settings',
@@ -444,6 +452,14 @@ Your reply to this prompt should be the first question to ask the student, and t
 						</td>
 					</tr>
 
+					<!-- Show Reasoning Checkbox field -->
+					<tr>
+						<th scope="row"><label for="show-reasoning">Show Reasoning</label></th>
+						<td>
+							<input type="checkbox" id="show-reasoning" name="socratic_show_reasoning" value="1" <?php checked( get_option( 'socratic_show_reasoning' ), 1 ); ?>>
+							<p class="description"><label for="show-reasoning">If checked, and the selected LLM provides its reasoning steps (often enclosed in XML-like tags such as `&lt;think&gt;` or `&lt;scratchpad&gt;`), display these steps in a collapsed section ('Socrates's Thoughts') above the main reply in the chat. This only applies to the front-end chat and <strong>the reasoning is not saved in the chat history</strong>.</label></p>
+						</td>
+					</tr>
 
 				</tbody>
 			</table>
@@ -697,7 +713,7 @@ Your reply to this prompt should be the first question to ask the student, and t
 					<tr>
 						<th scope="row">
 							<label for="category-0">Content Categories</label>
-							<p class="description" style="font-weight: normal;">The LLM will try to assign links to one of these categories and they will appear in your News of the Week post as headings.</p>
+							<p class="description" style="font-weight: normal;">The LLM will try to assign links to one of these categories and they will appear in your News of the Week post as headings. You do not need to add the 'other' category here.</p>
 						</th>
 						<td>
 							<div id="categories-container">

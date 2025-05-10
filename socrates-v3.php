@@ -313,25 +313,29 @@ class SocratesV3 {
 		$request->set_prompt( $messages );
 		$request->send_request();
 
-		// This is the response from the LLM.
-		$llm_response_data = $request->get_llm_response_data();
+		// This is the response from the LLM, now potentially an array with reasoning.
+		$llm_response_data = $request->get_llm_response_data( false );
 
-		// Sanitize the response from the LLM.
-		$llm_response_string = wp_kses_post( $llm_response_data );
-
-		// If the response is empty, after validation, return an error.
-		if ( empty( $llm_response_string ) ) {
-			wp_send_json_error( array( 'message' => 'E05. Response is empty. Please reload and try again.' ) );
+		// Check for errors returned by the LLM request/parsing process.
+		if ( is_string( $llm_response_data ) && strpos( $llm_response_data, 'Error: ' ) === 0 ) {
+			wp_send_json_error( array( 'message' => $llm_response_data ) );
 		}
 
-		// If the $llm_response_string starts with 'Error: ', it's an error so send a json_error
-		// This can happen if the LLM returns an error such as the API being down for example.
-		if ( strpos( $llm_response_string, 'Error: ' ) === 0 ) {
-			wp_send_json_error( array( 'message' => $llm_response_string ) );
+		// Extract reasoning and main response parts.
+		$reasoning         = isset( $llm_response_data['reasoning'] ) ? $llm_response_data['reasoning'] : null;
+		$main_response_raw = isset( $llm_response_data['response'] ) ? $llm_response_data['response'] : '';
+
+		// Sanitize the response parts.
+		$llm_response_string = wp_kses_post( $main_response_raw );
+		$sanitized_reasoning = $reasoning ? wp_kses_post( $reasoning ) : null;
+
+		// If the main response is empty after validation, return an error.
+		if ( empty( $llm_response_string ) ) {
+			wp_send_json_error( array( 'message' => 'E05. Response is empty after processing. Please reload and try again.' ) );
 		}
 
 		// If this is the user's 1st actual reply, we need to set it as the summary.
-		// The 1st and 2nd replies are the initial prompt and the question that prompt generates.
+		// The 1st and 2nd messages are the initial prompt and the first reply.
 		if ( count( $chats[ $chat_id ]['messages'] ) === 2 ) {
 			$chats[ $chat_id ]['summary'] = \UBC\CTLT\Socrates_Helpers::limit_text( $reply, 5 );
 		}
@@ -339,40 +343,68 @@ class SocratesV3 {
 		// We need to use some methods from the wpdb class.
 		global $wpdb;
 
-		// Now add the response from the user and the response from the LLM to the user meta.
-		$llm_response = array(
+		// Prepare the assistant's response for saving (only main content).
+		$llm_response_to_save = array(
 			'role'    => 'assistant',
 			'content' => $llm_response_string,
 		);
 
-		$messages[] = $llm_response;
+		$messages[] = $llm_response_to_save;
 
 		$chats[ $chat_id ]['messages'] = $messages;
 
+		// Get relevant links based on the main response string.
 		$links_results  = \UBC\CTLT\Socrates_Helpers::get_links_for_response( $llm_response_string );
 		$links_for_html = $links_results['links_for_html'];
 		$link_ids       = $links_results['link_ids'];
 
-		// These are the links that are being shown, so add those.
-		$this_chat_links   = $chats[ $chat_id ]['links_shown'];
+		// Store the IDs of the links shown in this turn.
+		$this_chat_links   = isset( $chats[ $chat_id ]['links_shown'] ) && is_array( $chats[ $chat_id ]['links_shown'] ) ? $chats[ $chat_id ]['links_shown'] : array();
 		$this_chat_links[] = $link_ids;
 
 		$chats[ $chat_id ]['links_shown'] = $this_chat_links;
 
-		// Now add this to our response.
-		$response = $llm_response_string;
-
-		// OK. Now add the new pieces of the conversation (from the user and from the llm) and the links shown, to the user meta.
+		// Save the updated chat history (including user message, assistant message, links shown) to user meta.
 		$user_meta_updated = update_user_meta( $user_id, 'socratic_chats', $chats );
 
 		if ( ! $user_meta_updated ) {
-			wp_send_json_error( array( 'message' => 'E06. Failed to save this conversation. Please reload and try again.' ) );
+			// Attempt to revert the messages array if saving failed.
+			array_pop( $messages ); // Remove assistant message.
+			array_pop( $messages ); // Remove user message.
+			$chats[ $chat_id ]['messages'] = $messages;
+			array_pop( $this_chat_links ); // Remove last link set.
+			$chats[ $chat_id ]['links_shown'] = $this_chat_links;
+			wp_send_json_error( array( 'message' => 'E06. Failed to save this conversation turn. Please reload and try again.' ) );
 		}
 
+		// Check the setting for showing reasoning.
+		$show_reasoning = (bool) get_option( 'socratic_show_reasoning', false );
+		// Sanitize reasoning if it exists
+		$sanitized_reasoning = isset( $reasoning ) ? wp_kses_post( $reasoning ) : null;
+
+		// Debug: Log what we're about to send in the JSON response
+		file_put_contents(
+			WP_CONTENT_DIR . '/debug.log',
+			print_r(
+				array(
+					'Socrates JSON Response' => array(
+						'message'        => $llm_response_string,
+						'links'          => $links_for_html,
+						'show_reasoning' => $show_reasoning,
+						'reasoning'      => ( $show_reasoning && ! empty( $sanitized_reasoning ) ) ? $sanitized_reasoning : null,
+					),
+				),
+				true
+			),
+			FILE_APPEND
+		);
+
+		// Send the successful response back to the front-end.
 		wp_send_json_success(
 			array(
-				'message' => $response,
-				'links'   => $links_for_html,
+				'message'   => $llm_response_string,
+				'links'     => $links_for_html,
+				'reasoning' => ( $show_reasoning && ! empty( $sanitized_reasoning ) ) ? $sanitized_reasoning : null,
 			)
 		);
 	}//end socrates_handle_chat_ajax()
@@ -490,7 +522,7 @@ class SocratesV3 {
 			Socrates: Name a digital world issue that interests you in 5 words or under.
 			Student: Loot boxes in video games.
 			Socrates: Thinking about loot boxes in video games, how do you think the current legal framework surrounding consumer protection and gambling applies to this issue? Consider aspects such as age restrictions, transparency, and the potential for addiction.
-			Student: It’s clear that current protections have failed. Children are exposed to gambling within video games. This needs to be legislated against.
+			Student: It\'s clear that current protections have failed. Children are exposed to gambling within video games. This needs to be legislated against.
 			Socrates: If legislation were to be implemented to address the issue of loot boxes in video games, what specific regulations do you think should be in place to protect consumers, particularly children, from the potential harms associated with these mechanics? Consider factors such as age verification, disclosure requirements, and possible consequences for non-compliance.
 			Student: Classifying loot boxes in video games as gambling will reduce the propensity for game developers to implement that mechanic in their games.
 			```

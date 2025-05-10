@@ -362,9 +362,39 @@ document.addEventListener( 'DOMContentLoaded', function() {
                     clearErrorStateFromForm( 'socratic_reply_form' );
 					clearErrorMessage( 'socratic_reply_form' );
 
-					// For a successful response, we replace the placeholder with the server's response
-					// this is a concatenation of the data.data.message and the links html we generate.
-					thinkingListItem.innerHTML = data.data.message + generateLinksHTML( data.data.links );
+					// Clear the thinking placeholder content before adding new content.
+					thinkingListItem.innerHTML = '';
+
+					// --- Debugging Log ---
+					console.log('AJAX Success Data:', data.data);
+					console.log('Reasoning content received:', data.data.reasoning);
+					// --- End Debugging Log ---
+
+					// Check if reasoning data exists and has content.
+					if ( data.data.reasoning && data.data.reasoning.trim() !== '' ) {
+						// Create the <details> element for reasoning.
+						const details = document.createElement('details');
+						// details.open = false; // Closed by default
+						const summary = document.createElement('summary');
+						summary.textContent = "Socrates's Thoughts"; // Consider making translatable
+						const reasoningDiv = document.createElement('div');
+						// Sanitize reasoning content appropriately if needed, though backend already did wp_kses_post
+						reasoningDiv.innerHTML = data.data.reasoning.replace(/\n/g, '<br>');
+
+						details.appendChild(summary);
+						details.appendChild(reasoningDiv);
+						thinkingListItem.appendChild(details); // Prepend details section
+					}
+
+					// Create a div for the main response and links.
+					const mainResponseDiv = document.createElement('div');
+					mainResponseDiv.innerHTML = data.data.message.replace(/\n/g, '<br>') + generateLinksHTML( data.data.links );
+
+					// Append the main response div.
+					thinkingListItem.appendChild(mainResponseDiv);
+
+					// Apply fade-in animation now that content is set.
+					animateFadeIn(thinkingListItem);
 
 					// Clear the textarea to be ready for another reply.
 					clearTextarea( 'socratic_reply' );
