@@ -1,0 +1,34 @@
+{
+  "name": "alle-ai/anthropic-api-php",
+  "description": "A PHP library for interacting with Anthropic's API",
+  "type": "library",
+  "keywords": [
+    "claude",
+    "alle-ai",
+    "anthropic",
+    "text-generation",
+    "chatbot"
+  ],
+  "homepage": "https://github.com/Alle-AI/anthropic-api-php",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Dickson Agyei",
+      "email": "dickson@alle-ai.com",
+      "homepage": "https://www.linkedin.com/in/dickson-agyei-jnr/",
+      "role": "Developer"        
+    }
+  ],
+  "version": "1.3",
+  "minimum-stability": "stable",
+  "prefer-stable": true,
+  "require": {
+    "php": "^7.4 || ^8.0",
+    "ext-curl": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "Alle_AI\\Anthropic\\": "src/"
+    }
+  }
+}
