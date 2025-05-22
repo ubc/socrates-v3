@@ -37,7 +37,9 @@ Your reply to this prompt should be JUST the first question to ask the student, 
 
 ## Source Material Settings
 
-An example prompt for collecting source material:
+Source material generation is now helped with some custom onboarding where you are asked to set content topics, focus, and categories, which then builds a detailed prompt which helps the AI produce a consistent format of output.
+
+Here is the old version of this prompt, for both posterity, and to act as a potential learning tool to help show how to get consistent output from LLMs which don't necessarily have native JSON mode.
 
 ```
 I need you to help me with a task. I have been given a series of blog post titles and excerpts and I need to determine how likely those blog posts are to discuss legal topics associated with a list of categories. I will provide to you all of the titles and excerpts for each post as well as an ID of that post (the post number).
