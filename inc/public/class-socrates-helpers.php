@@ -225,13 +225,19 @@ class Socrates_Helpers {
 			);
 		}
 
+		file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Generating Links: ', $llm_response_string ), true ), FILE_APPEND ); // phpcs:ignore
+
 		// We use Rake to get the keywords of the LLM response. This helps us get somewhat appropriate links.
 		// @TODO: Allow these to always be random? Set an option.
-		$rake          = RakePlus::create( $llm_response_string, 'en_US' );
+		$rake = RakePlus::create( $llm_response_string, 'en_US' );
+		file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Rake: ', $rake ), true ), FILE_APPEND ); // phpcs:ignore
 		$phrase_scores = $rake->sortByScore( 'desc' )->scores();
+		file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Phrase Scores: ', $phrase_scores ), true ), FILE_APPEND ); // phpcs:ignore
 
 		// And we only want the top phrase (it's the first array key)
 		$keywords = array_key_first( $phrase_scores );
+
+		file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Keywords: ', $keywords ), true ), FILE_APPEND ); // phpcs:ignore
 
 		// Now, for searching, we need to wrap each of the keywords with a % character.
 		// Currently it's a string. So convert to an array.
@@ -273,27 +279,32 @@ class Socrates_Helpers {
 		// OR `link_description` LIKE '%b% %a% %c%'
 		// OR `link_description` LIKE '%c% %b% %a%' ... etc (and then equivalents for `link_name`)
 
-		// This is how the query starts
-		$query_string = "SELECT * FROM {$wpdb->prefix}links WHERE (`link_description` LIKE '$keyword_combos[0]' OR `link_name` LIKE '$keyword_combos[0]'";
+		// This is how the query starts.
+		$query        = "SELECT * FROM {$wpdb->prefix}links WHERE (";
+		$conditions   = array();
+		$prepare_args = array();
 
-		// Now append the keyword combos to the query
-		foreach ( $keyword_combos as $kid => $keyword_combo ) {
-
-			// We've already done the first in the outset (to make our lives easier with the strings
-			// starting with ' OR'), so skip it.
-			if ( 0 === $kid ) {
-				continue;
-			}
-
-			$query_string .= " OR `link_description` LIKE '$keyword_combo' OR `link_name` LIKE '$keyword_combo'";
-
+		// Now append the keyword combos to the query.
+		foreach ( $keyword_combos as $keyword_combo ) {
+			$conditions[]   = '`link_description` LIKE %s OR `link_name` LIKE %s';
+			$prepare_args[] = $keyword_combo;
+			$prepare_args[] = $keyword_combo;
 		}
 
-		// Now add the last pieces.
-		$query_string .= ") AND `link_visible` = 'Y'";
-		$query_string .= ' ORDER BY `link_id` ASC LIMIT 3;';
+		$query .= implode( ' OR ', $conditions );
 
-		$result = $wpdb->get_results( $query_string );
+		// Now add the last pieces.
+		$query .= ') ORDER BY `link_id` ASC LIMIT 3;';
+
+		// Prepare the query for security.
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$prepared_query = $wpdb->prepare( $query, $prepare_args );
+
+		file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Query String: ', $prepared_query ), true ), FILE_APPEND ); // phpcs:ignore
+
+		$result = $wpdb->get_results( $prepared_query );
+
+		file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Result: ', $result ), true ), FILE_APPEND ); // phpcs:ignore
 
 		$links_for_html = array();
 		$link_ids       = array();
@@ -309,9 +320,40 @@ class Socrates_Helpers {
 			}
 		}
 
+		// Check if we need to add random links.
+		$include_random = get_option( 'socratic_include_random_links', false );
+		if ( $include_random && count( $links_for_html ) < 3 ) {
+			$needed = 3 - count( $links_for_html );
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Including Random. Needed: ', $needed ), true ), FILE_APPEND ); // phpcs:ignore
+			$exclude_ids = implode( ',', $link_ids );
+
+			$random_links = get_bookmarks(
+				array(
+					'orderby'        => 'rand',
+					'limit'          => $needed,
+					'exclude'        => $exclude_ids,
+					'hide_invisible' => 1, // Don't show links that haven't been published yet.
+				)
+			);
+
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Random Links: ', $random_links ), true ), FILE_APPEND ); // phpcs:ignore
+
+			if ( ! empty( $random_links ) ) {
+				foreach ( $random_links as $random_link ) {
+					$links_for_html[] = array(
+						'url'   => $random_link->link_url,
+						'title' => $random_link->link_name,
+					);
+					$link_ids[]       = $random_link->link_id;
+				}
+			}
+		}
+
 		$response_links                   = array();
 		$response_links['links_for_html'] = $links_for_html;
 		$response_links['link_ids']       = $link_ids;
+
+		file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Response Links: ', $response_links ), true ), FILE_APPEND ); // phpcs:ignore
 
 		return $response_links;
 	}//end get_links_for_response()

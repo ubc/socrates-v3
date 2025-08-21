@@ -49,6 +49,15 @@ register_deactivation_hook( __FILE__, array( '\UBC\CTLT\Socrates_Cron', 'deactiv
 // Hook for updating cron schedule when option is changed.
 add_action( 'update_option_socratic_link_collection_cadence', array( '\UBC\CTLT\Socrates_Helpers', 'socrates_update_feed_schedule' ), 10, 3 );
 
+// Cron tasks.
+add_filter( 'cron_schedules', array( 'UBC\CTLT\Socrates_Helpers', 'socrates_add_cron_schedules' ) );
+add_action( 'socrates_fetch_feeds', array( 'UBC\CTLT\Socrates_Helpers', 'socrates_cron_fetch_feeds' ) );
+add_action( 'update_option_socratic_link_collection_cadence', array( 'UBC\CTLT\Socrates_Helpers', 'socrates_update_feed_schedule' ), 10, 3 );
+// Staggered Feed Processing Cron Hooks.
+add_action( 'socrates_process_feed_queue', array( 'UBC\CTLT\Socrates_Helpers', 'socrates_process_feed_queue_worker' ) );
+add_action( 'socrates_process_llm_and_create_bookmarks', array( 'UBC\CTLT\Socrates_Helpers', 'socrates_llm_and_bookmark_worker' ) );
+
+
 class SocratesV3 {
 
 
@@ -128,6 +137,10 @@ class SocratesV3 {
 
 		// Initialize admin list view class.
 		$socrates_admin_list_view = new \UBC\CTLT\Socrates_Admin_List_View();
+
+		// Include and initialize the new Link Manager.
+		require_once plugin_dir_path( __FILE__ ) . 'inc/admin/class-socrates-link-manager.php';
+		new \UBC\CTLT\Socrates_Link_Manager();
 	}//end init__admin_setup()
 
 
@@ -146,13 +159,11 @@ class SocratesV3 {
 			wp_die();
 		}
 
-		// Fetch the feeds and categorize them.
-		$categorized_and_scored_links = \UBC\CTLT\Socrates_Helpers::fetch_feeds();
+		// Instead of running the whole process here, we'll just kick off the
+		// staggered cron job, which is now robust and avoids timeouts.
+		\UBC\CTLT\Socrates_Helpers::socrates_cron_fetch_feeds();
 
-		// Now we need to use this to create bookmarks.
-		$created_bookmarks = \UBC\CTLT\Socrates_Helpers::create_bookmarks( $categorized_and_scored_links );
-
-		echo $created_bookmarks . ' link(s) fetched.';
+		echo 'Feed fetching initiated in the background. It may take a few minutes for new links to be processed and appear.';
 
 		wp_die();
 	}//end wp_ajax_fetch_feeds__fetch_feeds_loader()

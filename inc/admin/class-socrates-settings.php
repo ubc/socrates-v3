@@ -87,6 +87,14 @@ class Socrates_Settings {
 
 		register_setting(
 			'socrates_socrates_settings',
+			'socratic_include_random_links',
+			array(
+				'sanitize_callback' => array( $this, 'sanitize_checkbox' ),
+			)
+		);
+
+		register_setting(
+			'socrates_socrates_settings',
 			'socratic_links_preamble',
 			array(
 				'sanitize_callback' => 'sanitize_text_field',
@@ -440,6 +448,15 @@ Your reply to this prompt should be the first question to ask the student, and t
 						<td>
 							<input type="checkbox" id="hide-links-in-reply" name="socratic_hide_links_in_reply" value="1" <?php checked( get_option( 'socratic_hide_links_in_reply' ), 1 ); ?>>
 							<p class="description"><label for="hide-links-in-reply">As part of the reply from the GenAI tool we can append a set of up to 3 links for the user to optionally view to help them with their answer. Checking this box will not show those links.</label></p>
+						</td>
+					</tr>
+
+					<!-- Include Random Links Checkbox field -->
+					<tr>
+						<th scope="row"><label for="include-random-links">Include random links</label></th>
+						<td>
+							<input type="checkbox" id="include-random-links" name="socratic_include_random_links" value="1" <?php checked( get_option( 'socratic_include_random_links' ), 1 ); ?>>
+							<p class="description"><label for="include-random-links">If we are unable to find 3 directly relevant links, include pseudo-random links from the links database.</label></p>
 						</td>
 					</tr>
 
