@@ -394,21 +394,21 @@ class SocratesV3 {
 		$sanitized_reasoning = isset( $reasoning ) ? wp_kses_post( $reasoning ) : null;
 
 		// Debug: Log what we're about to send in the JSON response
-		file_put_contents(
-			WP_CONTENT_DIR . '/debug.log',
-			print_r(
-				array(
-					'Socrates JSON Response' => array(
-						'message'        => $llm_response_string,
-						'links'          => $links_for_html,
-						'show_reasoning' => $show_reasoning,
-						'reasoning'      => ( $show_reasoning && ! empty( $sanitized_reasoning ) ) ? $sanitized_reasoning : null,
-					),
-				),
-				true
-			),
-			FILE_APPEND
-		);
+		// file_put_contents(
+		// WP_CONTENT_DIR . '/debug.log',
+		// print_r(
+		// array(
+		// 'Socrates JSON Response' => array(
+		// 'message'        => $llm_response_string,
+		// 'links'          => $links_for_html,
+		// 'show_reasoning' => $show_reasoning,
+		// 'reasoning'      => ( $show_reasoning && ! empty( $sanitized_reasoning ) ) ? $sanitized_reasoning : null,
+		// ),
+		// ),
+		// true
+		// ),
+		// FILE_APPEND
+		// );
 
 		// Send the successful response back to the front-end.
 		wp_send_json_success(

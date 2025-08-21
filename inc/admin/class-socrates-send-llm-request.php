@@ -163,7 +163,7 @@ class Socrates_Send_LLM_Request {
 				$class_to_load = apply_filters( 'socrates_v3_custom_llm_class', '', $this->tool );
 				if ( empty( $class_to_load ) ) {
 					// Log the error for debugging.
-					file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( __FILE__, __LINE__, 'Unsupported tool', $this->tool ), true ), FILE_APPEND ); // phpcs:ignore
+					// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( __FILE__, __LINE__, 'Unsupported tool', $this->tool ), true ), FILE_APPEND ); // phpcs:ignore
 					wp_die( 'Invalid or unsupported LLM tool selected: ' . esc_html( $this->tool ) );
 				}
 		}
@@ -187,14 +187,14 @@ class Socrates_Send_LLM_Request {
 
 		// Check if the determined class has a file path defined.
 		if ( ! array_key_exists( $class_to_load, $file_to_load_for_chosen_llm_class ) ) {
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( __FILE__, __LINE__, 'file not defined for class', $class_to_load, $file_to_load_for_chosen_llm_class ), true ), FILE_APPEND ); // phpcs:ignore
+			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( __FILE__, __LINE__, 'file not defined for class', $class_to_load, $file_to_load_for_chosen_llm_class ), true ), FILE_APPEND ); // phpcs:ignore
 			wp_die( 'No file path defined for the chosen LLM class: ' . esc_html( $class_to_load ) );
 		}
 
 		$file_path = $file_to_load_for_chosen_llm_class[ $class_to_load ];
 
 		if ( ! file_exists( $file_path ) ) {
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( __FILE__, __LINE__, 'file does not exist', $file_path, $class_to_load ), true ), FILE_APPEND ); // phpcs:ignore
+			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( __FILE__, __LINE__, 'file does not exist', $file_path, $class_to_load ), true ), FILE_APPEND ); // phpcs:ignore
 			wp_die( 'LLM class file does not exist: ' . esc_html( $file_path ) );
 		}
 

@@ -225,19 +225,19 @@ class Socrates_Helpers {
 			);
 		}
 
-		file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Generating Links: ', $llm_response_string ), true ), FILE_APPEND ); // phpcs:ignore
+		// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Generating Links: ', $llm_response_string ), true ), FILE_APPEND ); // phpcs:ignore
 
 		// We use Rake to get the keywords of the LLM response. This helps us get somewhat appropriate links.
 		// @TODO: Allow these to always be random? Set an option.
 		$rake = RakePlus::create( $llm_response_string, 'en_US' );
-		file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Rake: ', $rake ), true ), FILE_APPEND ); // phpcs:ignore
+		// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Rake: ', $rake ), true ), FILE_APPEND ); // phpcs:ignore
 		$phrase_scores = $rake->sortByScore( 'desc' )->scores();
-		file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Phrase Scores: ', $phrase_scores ), true ), FILE_APPEND ); // phpcs:ignore
+		// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Phrase Scores: ', $phrase_scores ), true ), FILE_APPEND ); // phpcs:ignore
 
 		// And we only want the top phrase (it's the first array key)
 		$keywords = array_key_first( $phrase_scores );
 
-		file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Keywords: ', $keywords ), true ), FILE_APPEND ); // phpcs:ignore
+		// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Keywords: ', $keywords ), true ), FILE_APPEND ); // phpcs:ignore
 
 		// Now, for searching, we need to wrap each of the keywords with a % character.
 		// Currently it's a string. So convert to an array.
@@ -300,11 +300,11 @@ class Socrates_Helpers {
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		$prepared_query = $wpdb->prepare( $query, $prepare_args );
 
-		file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Query String: ', $prepared_query ), true ), FILE_APPEND ); // phpcs:ignore
+		// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Query String: ', $prepared_query ), true ), FILE_APPEND ); // phpcs:ignore
 
 		$result = $wpdb->get_results( $prepared_query );
 
-		file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Result: ', $result ), true ), FILE_APPEND ); // phpcs:ignore
+		// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Result: ', $result ), true ), FILE_APPEND ); // phpcs:ignore
 
 		$links_for_html = array();
 		$link_ids       = array();
@@ -324,7 +324,7 @@ class Socrates_Helpers {
 		$include_random = get_option( 'socratic_include_random_links', false );
 		if ( $include_random && count( $links_for_html ) < 3 ) {
 			$needed = 3 - count( $links_for_html );
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Including Random. Needed: ', $needed ), true ), FILE_APPEND ); // phpcs:ignore
+			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Including Random. Needed: ', $needed ), true ), FILE_APPEND ); // phpcs:ignore
 			$exclude_ids = implode( ',', $link_ids );
 
 			$random_links = get_bookmarks(
@@ -336,7 +336,7 @@ class Socrates_Helpers {
 				)
 			);
 
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Random Links: ', $random_links ), true ), FILE_APPEND ); // phpcs:ignore
+			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Random Links: ', $random_links ), true ), FILE_APPEND ); // phpcs:ignore
 
 			if ( ! empty( $random_links ) ) {
 				foreach ( $random_links as $random_link ) {
@@ -353,7 +353,7 @@ class Socrates_Helpers {
 		$response_links['links_for_html'] = $links_for_html;
 		$response_links['link_ids']       = $link_ids;
 
-		file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Response Links: ', $response_links ), true ), FILE_APPEND ); // phpcs:ignore
+		// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Response Links: ', $response_links ), true ), FILE_APPEND ); // phpcs:ignore
 
 		return $response_links;
 	}//end get_links_for_response()
@@ -563,7 +563,7 @@ class Socrates_Helpers {
 		$response = $client->models()->list();
 		$response = $response->toArray()['data'];
 
-		file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( $response, true ), FILE_APPEND ); // phpcs:ignore
+		// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( $response, true ), FILE_APPEND ); // phpcs:ignore
 	}//end socrates_get_chatgpt_models()
 
 	/**
@@ -652,7 +652,7 @@ class Socrates_Helpers {
 		$audio_file_path = trailingslashit( $upload_path ) . $speech_params['voice'] . '-audio-' . time() . '.mp3';
 
 		// Save the binary data to a file
-		file_put_contents( $audio_file_path, $mp3_content );
+		// file_put_contents( $audio_file_path, $mp3_content );
 
 		// At this point, you have the audio file saved on your server
 		// You can provide a link to download it or embed it in a webpage
@@ -684,7 +684,7 @@ class Socrates_Helpers {
 		}
 
 		if ( false === $response_string ) {
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Response was false.' ), true ), FILE_APPEND ); // phpcs:ignore
+			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Response was false.' ), true ), FILE_APPEND ); // phpcs:ignore
 			return 'Error: ' . __FILE__ . ' :: ' . __LINE__;
 		}
 
@@ -974,11 +974,11 @@ class Socrates_Helpers {
 
 		// Let's get the feeds from the settings.
 		$socratic_feeds = get_option( 'socratic_feeds' );
-		file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- Staggered Feed Fetch Initiated ---\n", FILE_APPEND ); // phpcs:ignore
+		// file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- Staggered Feed Fetch Initiated ---\n", FILE_APPEND ); // phpcs:ignore
 
 		// If there are no feeds, there's nothing to do.
 		if ( ! is_array( $socratic_feeds ) || empty( $socratic_feeds ) ) {
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', "No feeds found to process.\n", FILE_APPEND ); // phpcs:ignore
+			// file_put_contents( WP_CONTENT_DIR . '/debug.log', "No feeds found to process.\n", FILE_APPEND ); // phpcs:ignore
 			return;
 		}
 
@@ -993,7 +993,7 @@ class Socrates_Helpers {
 		set_transient( 'socrates_feed_results', array(), HOUR_IN_SECONDS );
 
 		$log_message = count( $socratic_feeds ) . " feeds have been added to the processing queue.\n";
-		file_put_contents( WP_CONTENT_DIR . '/debug.log', $log_message, FILE_APPEND ); // phpcs:ignore
+		// file_put_contents( WP_CONTENT_DIR . '/debug.log', $log_message, FILE_APPEND ); // phpcs:ignore
 
 		// All set up. Schedule the first worker to run immediately.
 		// It runs in a separate process to avoid timeouts.
@@ -1015,7 +1015,7 @@ class Socrates_Helpers {
 		if ( empty( $feed_queue ) || ! is_array( $feed_queue ) ) {
 			wp_schedule_single_event( time(), 'socrates_process_llm_and_create_bookmarks' );
 			delete_transient( 'socrates_feed_queue' );
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', "Feed queue is empty. Scheduling final LLM processing step.\n", FILE_APPEND ); // phpcs:ignore
+			// file_put_contents( WP_CONTENT_DIR . '/debug.log', "Feed queue is empty. Scheduling final LLM processing step.\n", FILE_APPEND ); // phpcs:ignore
 			return;
 		}
 
@@ -1023,7 +1023,7 @@ class Socrates_Helpers {
 		$feed_to_process = array_shift( $feed_queue );
 
 		$log_message = 'Processing feed: ' . $feed_to_process['url'] . '. ' . count( $feed_queue ) . " feeds remaining.\n";
-		file_put_contents( WP_CONTENT_DIR . '/debug.log', $log_message, FILE_APPEND ); // phpcs:ignore
+		// file_put_contents( WP_CONTENT_DIR . '/debug.log', $log_message, FILE_APPEND ); // phpcs:ignore
 
 		// Include the feed fetcher class file.
 		require_once UBC_SELFSOCV3_DIR . 'inc/admin/class-socrates-fetch-feeds.php';
@@ -1056,12 +1056,12 @@ class Socrates_Helpers {
 		// Get the accumulated results from all the feed processing workers.
 		$processed_links = get_transient( 'socrates_feed_results' );
 		$log_message     = '--- Final LLM & Bookmark Creation Step Initiated. Processing ' . count( $processed_links ) . " collected links. ---\n";
-		file_put_contents( WP_CONTENT_DIR . '/debug.log', $log_message, FILE_APPEND ); // phpcs:ignore
+		// file_put_contents( WP_CONTENT_DIR . '/debug.log', $log_message, FILE_APPEND ); // phpcs:ignore
 
 		// If there's nothing to process, we can stop.
 		if ( empty( $processed_links ) || ! is_array( $processed_links ) ) {
 			delete_transient( 'socrates_feed_results' ); // Clean up just in case.
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', "No links to process. Aborting.\n", FILE_APPEND ); // phpcs:ignore
+			// file_put_contents( WP_CONTENT_DIR . '/debug.log', "No links to process. Aborting.\n", FILE_APPEND ); // phpcs:ignore
 			return;
 		}
 
@@ -1076,7 +1076,7 @@ class Socrates_Helpers {
 			// If we got valid results, create the bookmarks.
 			if ( ! empty( $llm_results ) ) {
 				self::create_bookmarks( $llm_results );
-				file_put_contents( WP_CONTENT_DIR . '/debug.log', 'Bookmark creation complete for ' . count( $llm_results ) . " links.\n", FILE_APPEND ); // phpcs:ignore
+				// file_put_contents( WP_CONTENT_DIR . '/debug.log', 'Bookmark creation complete for ' . count( $llm_results ) . " links.\n", FILE_APPEND ); // phpcs:ignore
 			}
 
 			// All done! Update the 'last fetched' time.
@@ -1085,11 +1085,11 @@ class Socrates_Helpers {
 		} catch ( \Exception $e ) {
 			// Log any errors that occur during the final processing.
 			$error_message = 'Socrates final processing error: ' . $e->getMessage();
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( $error_message, true ), FILE_APPEND ); // phpcs:ignore
+			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( $error_message, true ), FILE_APPEND ); // phpcs:ignore
 		} finally {
 			// Whether it succeeded or failed, clean up the transient.
 			delete_transient( 'socrates_feed_results' );
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- Staggered Feed Fetch Finished ---\n", FILE_APPEND ); // phpcs:ignore
+			// file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- Staggered Feed Fetch Finished ---\n", FILE_APPEND ); // phpcs:ignore
 		}
 	}
 }//end class

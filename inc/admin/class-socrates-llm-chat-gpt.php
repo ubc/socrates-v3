@@ -105,7 +105,7 @@ class Socrates_LLM_Chat_Gpt {
 	 */
 	public function make_request( $client, $request ) {
 
-		file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'OpenAI Request' => $request ), true ), FILE_APPEND ); // phpcs:ignore
+		// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'OpenAI Request' => $request ), true ), FILE_APPEND ); // phpcs:ignore
 
 		try {
 
@@ -114,7 +114,7 @@ class Socrates_LLM_Chat_Gpt {
 
 		} catch ( \OpenAI\Exceptions\ErrorException $e ) {
 
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'API Error' => $e->getMessage() ), true ), FILE_APPEND ); // phpcs:ignore
+			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'API Error' => $e->getMessage() ), true ), FILE_APPEND ); // phpcs:ignore
 
 			return array(
 				'error'   => true,
@@ -123,7 +123,7 @@ class Socrates_LLM_Chat_Gpt {
 
 		} catch ( \Exception $e ) {
 
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Unexpected Error' => $e->getMessage() ), true ), FILE_APPEND ); // phpcs:ignore
+			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Unexpected Error' => $e->getMessage() ), true ), FILE_APPEND ); // phpcs:ignore
 
 			return array(
 				'error'   => true,
@@ -154,7 +154,7 @@ class Socrates_LLM_Chat_Gpt {
 
 		// Check if the response structure is valid.
 		if ( ! isset( $llm_response_data->choices[0]->message->content ) ) {
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Invalid OpenAI Response Structure' => $llm_response_data ), true ), FILE_APPEND ); // phpcs:ignore
+			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Invalid OpenAI Response Structure' => $llm_response_data ), true ), FILE_APPEND ); // phpcs:ignore
 			return 'Error: Invalid response structure from OpenAI.';
 		}
 
@@ -214,13 +214,13 @@ class Socrates_LLM_Chat_Gpt {
 
 			// Check for JSON decoding errors.
 			if ( json_last_error() !== JSON_ERROR_NONE ) {
-				file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'ChatGPT JSON Decode Error' => json_last_error_msg(), 'Content Received' => $main_response ), true ), FILE_APPEND ); // phpcs:ignore
+				// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'ChatGPT JSON Decode Error' => json_last_error_msg(), 'Content Received' => $main_response ), true ), FILE_APPEND ); // phpcs:ignore
 				return null; // Indicate failure.
 			}
 
 			// Basic validation: Ensure it's an array.
 			if ( ! is_array( $decoded_json ) ) {
-				file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'ChatGPT JSON Validation Error' => 'Decoded JSON is not an array.', 'Content Received' => $main_response ), true ), FILE_APPEND ); // phpcs:ignore
+				// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'ChatGPT JSON Validation Error' => 'Decoded JSON is not an array.', 'Content Received' => $main_response ), true ), FILE_APPEND ); // phpcs:ignore
 				return null; // Indicate failure.
 			}
 
