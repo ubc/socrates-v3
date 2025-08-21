@@ -127,19 +127,39 @@ class Socrates_Notw_Post_Creator {
 		// This is now a multi-dimensional array. Each inner array is the link category ID for the links
 		// contained within.
 
-		// If we are using the Other category, we need to ensure that's last in the array.
-		$other_category_term = get_term_by( 'name', 'Other', 'link_category' );
+		// Get the user-defined order of categories.
+		$ordered_category_names = get_option( 'socratic_categories', array() );
+		$ordered_links          = array();
 
-		$other_cat_id = $other_category_term->term_id;
-
-		// Most efficient way to do this is to unset it, and then add it back.
-		if ( isset( $usable_bookmarks[ $other_cat_id ] ) ) {
-			$other_bookmarks = $usable_bookmarks[ $other_cat_id ];
-			unset( $usable_bookmarks[ $other_cat_id ] );
-			$usable_bookmarks[ $other_cat_id ] = $other_bookmarks;
+		// Populate the ordered links array based on the settings.
+		foreach ( $ordered_category_names as $category_name ) {
+			$term = get_term_by( 'name', $category_name, 'link_category' );
+			if ( $term && isset( $usable_bookmarks[ $term->term_id ] ) ) {
+				$ordered_links[ $term->term_id ] = $usable_bookmarks[ $term->term_id ];
+				unset( $usable_bookmarks[ $term->term_id ] );
+			}
 		}
 
-		$this->links = $usable_bookmarks;
+		// Handle the 'Other' category separately to ensure it's last.
+		$other_category_term = get_term_by( 'name', 'Other', 'link_category' );
+		$other_cat_id        = $other_category_term ? $other_category_term->term_id : 0;
+		$other_bookmarks     = null;
+
+		if ( $other_cat_id && isset( $usable_bookmarks[ $other_cat_id ] ) ) {
+			$other_bookmarks = $usable_bookmarks[ $other_cat_id ];
+			unset( $usable_bookmarks[ $other_cat_id ] );
+		}
+
+		// Append any remaining categories that were not in the ordered list.
+		$final_links = $ordered_links + $usable_bookmarks;
+
+		// Add the 'Other' category at the end if it exists. The get_notw_bookmark_category_ids()
+		// method already handles whether to include it based on settings.
+		if ( $other_bookmarks ) {
+			$final_links[ $other_cat_id ] = $other_bookmarks;
+		}
+
+		$this->links = $final_links;
 	}//end gather_links()
 
 
