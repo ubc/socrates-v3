@@ -851,26 +851,6 @@ class Socrates_Helpers {
 
 
 	/**
-	 * A standalone static method to fetch feeds from the RSS URLs in the
-	 * settings.
-	 *
-	 * Usage: $feeds = \UBC\CTLT\Socrates_Helpers::fetch_feeds();
-	 *
-	 * @return array
-	 * @since 3.0.1
-	 */
-	public static function fetch_feeds() {
-
-		// Include the feed fetcher class file.
-		require_once UBC_SELFSOCV3_DIR . 'inc/admin/class-socrates-fetch-feeds.php';
-
-		// Initialize feed fetcher class.
-		$socrates_feeds = new \UBC\CTLT\Socrates_Fetch_Feeds();
-
-		return $socrates_feeds->output();
-	}//end fetch_feeds()
-
-	/**
 	 * A standalone static method to create the bookmarks from the passed categorized and scored links.
 	 *
 	 * Usage: $created_bookmarks = \UBC\CTLT\Socrates_Helpers::create_bookmarks( $categorized_and_scored_links );
@@ -950,14 +930,124 @@ class Socrates_Helpers {
 
 	public static function socrates_cron_fetch_feeds() {
 
+		// Let's get the feeds from the settings.
+		$socratic_feeds = get_option( 'socratic_feeds' );
+		file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- Staggered Feed Fetch Initiated ---\n", FILE_APPEND ); // phpcs:ignore
+
+		// If there are no feeds, there's nothing to do.
+		if ( ! is_array( $socratic_feeds ) || empty( $socratic_feeds ) ) {
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', "No feeds found to process.\n", FILE_APPEND ); // phpcs:ignore
+			return;
+		}
+
+		// Clear any old transients to ensure a fresh start.
+		delete_transient( 'socrates_feed_queue' );
+		delete_transient( 'socrates_feed_results' );
+
+		// Set the queue of feeds to be processed.
+		set_transient( 'socrates_feed_queue', $socratic_feeds, HOUR_IN_SECONDS );
+
+		// Initialize an empty array for the results.
+		set_transient( 'socrates_feed_results', array(), HOUR_IN_SECONDS );
+
+		$log_message = count( $socratic_feeds ) . " feeds have been added to the processing queue.\n";
+		file_put_contents( WP_CONTENT_DIR . '/debug.log', $log_message, FILE_APPEND ); // phpcs:ignore
+
+		// All set up. Schedule the first worker to run immediately.
+		// It runs in a separate process to avoid timeouts.
+		wp_schedule_single_event( time(), 'socrates_process_feed_queue' );
+	}
+
+	/**
+	 * Worker function to process a single feed from the queue.
+	 * This is intended to be run asynchronously via WP Cron.
+	 *
+	 * @return void
+	 */
+	public static function socrates_process_feed_queue_worker() {
+		// This will be implemented in the next step.
+		$feed_queue = get_transient( 'socrates_feed_queue' );
+
+		// If the queue is empty or not an array, our work is done here.
+		// Let's schedule the next step and clean up.
+		if ( empty( $feed_queue ) || ! is_array( $feed_queue ) ) {
+			wp_schedule_single_event( time(), 'socrates_process_llm_and_create_bookmarks' );
+			delete_transient( 'socrates_feed_queue' );
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', "Feed queue is empty. Scheduling final LLM processing step.\n", FILE_APPEND ); // phpcs:ignore
+			return;
+		}
+
+		// Get the first feed from the queue.
+		$feed_to_process = array_shift( $feed_queue );
+
+		$log_message = 'Processing feed: ' . $feed_to_process['url'] . '. ' . count( $feed_queue ) . " feeds remaining.\n";
+		file_put_contents( WP_CONTENT_DIR . '/debug.log', $log_message, FILE_APPEND ); // phpcs:ignore
+
+		// Include the feed fetcher class file.
+		require_once UBC_SELFSOCV3_DIR . 'inc/admin/class-socrates-fetch-feeds.php';
+		$feed_processor = new \UBC\CTLT\Socrates_Fetch_Feeds();
+
+		// Process this one feed. This returns an array of its processed articles.
+		$processed_links = $feed_processor->process_single_feed( $feed_to_process['url'] );
+
+		// Get the current results, merge in the new ones, and save back to the transient.
+		$current_results = get_transient( 'socrates_feed_results' );
+		$merged_results  = array_merge( $current_results, $processed_links );
+		set_transient( 'socrates_feed_results', $merged_results, HOUR_IN_SECONDS );
+
+		// Update the queue transient with the remaining feeds.
+		set_transient( 'socrates_feed_queue', $feed_queue, HOUR_IN_SECONDS );
+
+		// Schedule the next run to process the next item in the queue.
+		// We add a 1-minute delay to give the server a breather.
+		wp_schedule_single_event( time() + MINUTE_IN_SECONDS, 'socrates_process_feed_queue' );
+	}
+
+	/**
+	 * Worker function to process the accumulated feed results with the LLM.
+	 * This is intended to be run asynchronously via WP Cron after all feeds are fetched.
+	 *
+	 * @return void
+	 */
+	public static function socrates_llm_and_bookmark_worker() {
+		// This will be implemented in a future step.
+		// Get the accumulated results from all the feed processing workers.
+		$processed_links = get_transient( 'socrates_feed_results' );
+		$log_message     = '--- Final LLM & Bookmark Creation Step Initiated. Processing ' . count( $processed_links ) . " collected links. ---\n";
+		file_put_contents( WP_CONTENT_DIR . '/debug.log', $log_message, FILE_APPEND ); // phpcs:ignore
+
+		// If there's nothing to process, we can stop.
+		if ( empty( $processed_links ) || ! is_array( $processed_links ) ) {
+			delete_transient( 'socrates_feed_results' ); // Clean up just in case.
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', "No links to process. Aborting.\n", FILE_APPEND ); // phpcs:ignore
+			return;
+		}
+
 		try {
-			$feeds = self::fetch_feeds();
+			// Include the feed fetcher class file again.
+			require_once UBC_SELFSOCV3_DIR . 'inc/admin/class-socrates-fetch-feeds.php';
+			$feed_processor = new \UBC\CTLT\Socrates_Fetch_Feeds();
 
-			$created_bookmarks = self::create_bookmarks( $feeds );
+			// Send the collected links to the LLM for categorization and scoring.
+			$llm_results = $feed_processor->get_llm_results_for_links( $processed_links );
 
+			// If we got valid results, create the bookmarks.
+			if ( ! empty( $llm_results ) ) {
+				self::create_bookmarks( $llm_results );
+				file_put_contents( WP_CONTENT_DIR . '/debug.log', 'Bookmark creation complete for ' . count( $llm_results ) . " links.\n", FILE_APPEND ); // phpcs:ignore
+			}
+
+			// All done! Update the 'last fetched' time.
 			update_option( 'socratic_last_feed_fetch', current_time( 'mysql' ) );
-		} catch ( Exception $e ) {
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Socrates feed fetch error: ' . $e->getMessage() ), true ), FILE_APPEND ); // phpcs:ignore
+
+		} catch ( \Exception $e ) {
+			// Log any errors that occur during the final processing.
+			$error_message = 'Socrates final processing error: ' . $e->getMessage();
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( $error_message, true ), FILE_APPEND ); // phpcs:ignore
+		} finally {
+			// Whether it succeeded or failed, clean up the transient.
+			delete_transient( 'socrates_feed_results' );
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- Staggered Feed Fetch Finished ---\n", FILE_APPEND ); // phpcs:ignore
 		}
 	}
 }//end class

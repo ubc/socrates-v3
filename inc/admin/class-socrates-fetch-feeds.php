@@ -96,35 +96,6 @@ class Socrates_Fetch_Feeds {
 
 
 	/**
-	 * Main method which fetches the feeds, categorizes them using an llm,
-	 *
-	 * @return array
-	 * @since 3.0.1
-	 */
-	public function output() {
-
-		// Grab all of the articles from the listed feeds.
-		foreach ( $this->socratic_feeds as $findex => $feed ) {
-			$this->fetch_articles_from_feed( esc_url( $feed['url'] ), $this->max_articles_to_fetch_per_feed );
-		}
-
-		// Now get the excerpt/content for each of these new articles.
-		foreach ( $this->articles as $aaindex => $unique_article ) {
-			$this->fetch_article_content_and_excerpt( $unique_article['link'], $unique_article['guid'] );
-		}
-
-		// Now generate the prompt we'll send to the LLM.
-		$this->generate_prompt();
-
-		// Now hit the LLM to get the category, and rating for each link.
-		$this->use_llm_to_categorize_and_rate_links();
-
-		// Now we get the usable data and return it.
-		return $this->get_raw_data_for_bookmarks();
-	}//end output()
-
-
-	/**
 	 * Fetch the most recent articles from the passed feed.
 	 *
 	 * @param  string $feed_url The URL of the feed to fetch.
@@ -488,6 +459,50 @@ class Socrates_Fetch_Feeds {
 
 		return $usable_data;
 	}//end get_raw_data_for_bookmarks()
+
+	/**
+	 * Processes a single feed: fetches its articles, then fetches the content
+	 * for each of those articles. This is a slimmed-down version of the main
+	 * `output()` method, designed for the staggered cron job.
+	 *
+	 * @param string $feed_url The URL of the single feed to process.
+	 * @return array An array of processed links with title, url, and excerpt.
+	 */
+	public function process_single_feed( $feed_url ) {
+
+		// Step 1: Fetch article items from the single feed URL.
+		$this->fetch_articles_from_feed( esc_url( $feed_url ), $this->max_articles_to_fetch_per_feed );
+
+		// Step 2: Now get the content/excerpt for each new article.
+		// The results are stored in the class property `$this->links`.
+		foreach ( $this->articles as $article ) {
+			$this->fetch_article_content_and_excerpt( $article['link'], $article['guid'] );
+		}
+
+		// Step 3: Return the processed articles.
+		return $this->links;
+	}
+
+	/**
+	 * Takes a prepared list of links, sends them to the LLM for categorization
+	 * and scoring, and then returns the processed data ready for bookmarking.
+	 *
+	 * @param array $links Array of links with 'title', 'url', and 'excerpt'.
+	 * @return array The processed data from the LLM.
+	 */
+	public function get_llm_results_for_links( $links ) {
+		// Step 1: Set the links as a class property.
+		$this->links = $links;
+
+		// Step 2: Generate the prompt for the LLM.
+		$this->generate_prompt();
+
+		// Step 3: Send the prompt to the LLM.
+		$this->use_llm_to_categorize_and_rate_links();
+
+		// Step 4: Parse the LLM's response and return the data.
+		return $this->get_raw_data_for_bookmarks();
+	}
 
 	/**
 	 * The minimum threshold score
