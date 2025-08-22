@@ -216,13 +216,18 @@ class Socrates_Notw_Post_Creator {
 	 * This is a post which
 	 *
 	 * - has a title of "News of the week <date>", // @todo make this a setting
-	 * - is in a 'notw' category // @todo make this a setting
+	 * - is in a 'notw' category
 	 * - outputs each of the bookmarks under their category headings as a list
 	 *
 	 * @return void
 	 * @since 3.0.1
 	 */
 	public function generate_post() {
+
+		// If there's no links, we can't generate a post.
+		if ( empty( $this->links ) || ! is_array( $this->links ) || count( $this->links ) === 0 ) {
+			return;
+		}
 
 		$this->title = $this->get_title();
 
