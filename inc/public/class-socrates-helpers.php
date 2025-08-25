@@ -210,12 +210,12 @@ class Socrates_Helpers {
 	 *
 	 * Usage: $links = \UBC\CTLT\Socrates_Helpers::get_links_for_response( $llm_response_string );
 	 *
-	 * @param  string $llm_response_string The response from the LLM for which we're generating links.
+	 * @param  string $category The category of the links we're generating.
 	 *
 	 * @return array
 	 * @since 3.0.1
 	 */
-	public static function get_links_for_response( $llm_response_string ) {
+	public static function get_links_for_response( $category ) {
 
 		// If we're not using links - determined by the socratic_hide_links_in_reply option, return an empty array.
 		if ( 1 === absint( get_option( 'socratic_hide_links_in_reply' ) ) ) {
@@ -225,106 +225,37 @@ class Socrates_Helpers {
 			);
 		}
 
-		// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Generating Links: ', $llm_response_string ), true ), FILE_APPEND ); // phpcs:ignore
-
-		// We use Rake to get the keywords of the LLM response. This helps us get somewhat appropriate links.
-		// @TODO: Allow these to always be random? Set an option.
-		$rake = RakePlus::create( $llm_response_string, 'en_US' );
-		// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Rake: ', $rake ), true ), FILE_APPEND ); // phpcs:ignore
-		$phrase_scores = $rake->sortByScore( 'desc' )->scores();
-		// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Phrase Scores: ', $phrase_scores ), true ), FILE_APPEND ); // phpcs:ignore
-
-		// And we only want the top phrase (it's the first array key)
-		$keywords = array_key_first( $phrase_scores );
-
-		// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Keywords: ', $keywords ), true ), FILE_APPEND ); // phpcs:ignore
-
-		// Now, for searching, we need to wrap each of the keywords with a % character.
-		// Currently it's a string. So convert to an array.
-		$keywords_as_array = explode( ' ', $keywords );
-
-		// Limit this to no more than 4 words. Otherwise the search query becomes bonkers.
-		$max_four_keywords = array_slice( $keywords_as_array, 0, 4 );
-
-		// We need to use some methods from the wpdb class.
-		global $wpdb;
-
-		// Now wrap in %
-		$wildcard_keywords = array_map(
-			function ( $keyword ) use ( $wpdb ) {
-				return '%' . $wpdb->esc_like( $keyword ) . '%';
-			},
-			$max_four_keywords
-		);
-
-		// What's really fun is that if you use a search such as %game% %development% %companies% you
-		// won't get results for "companies who do game development" because the keywords aren't in
-		// the 'correct' order. So when we build our query we need to look for the keywords in all the
-		// possible orders. This isn't awful because there aren't going to be too many keywords, but
-		// it will make for a messy query.
-
-		// So, first, we need to build all the possible orders of the keywords. So, if we have
-		// array( %word1%, %word2%, %word3% ) then we need to build an array of arrays that looks
-		// something like array( array(1,2,3), array(2,1,3), array(2,3,1), array(1,3,2), array(3,1,2), array(3,2,1) ).
-
-		// But that might not be enough as that would require all the keywords to be present. So let's
-		// make it a little more likely a result will be found. Let's reduce the number of keywords by
-		// one and fetch all results with either ALL the keywords in any order, or all of them minus one
-		// in any order.
-		$keyword_combos = self::socrates_generate_combinations( $wildcard_keywords );
-
-		// With each of the keyword combos, we need to build a query. The keyword combos each need to be
-		// looked for in the link name or description. So that needs to look like a bunch of
-		// OR `link_description` LIKE '%a% %b% %c%'
-		// OR `link_description` LIKE '%b% %a% %c%'
-		// OR `link_description` LIKE '%c% %b% %a%' ... etc (and then equivalents for `link_name`)
-
-		// This is how the query starts.
-		$query        = "SELECT * FROM {$wpdb->prefix}links WHERE (";
-		$conditions   = array();
-		$prepare_args = array();
-
-		// Now append the keyword combos to the query.
-		foreach ( $keyword_combos as $keyword_combo ) {
-			$conditions[]   = '`link_description` LIKE %s OR `link_name` LIKE %s';
-			$prepare_args[] = $keyword_combo;
-			$prepare_args[] = $keyword_combo;
-		}
-
-		$query .= implode( ' OR ', $conditions );
-
-		// Now add the last pieces.
-		$query .= ') ORDER BY `link_id` ASC LIMIT 3;';
-
-		// Prepare the query for security.
-		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		$prepared_query = $wpdb->prepare( $query, $prepare_args );
-
-		// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Query String: ', $prepared_query ), true ), FILE_APPEND ); // phpcs:ignore
-
-		$result = $wpdb->get_results( $prepared_query );
-
-		// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Result: ', $result ), true ), FILE_APPEND ); // phpcs:ignore
-
 		$links_for_html = array();
 		$link_ids       = array();
 
+		// Sanitize the incoming category.
+		$category = sanitize_text_field( $category );
+
+		// Fetch links for the specified category.
+		$bookmarks = get_bookmarks(
+			array(
+				'category_name'  => $category,
+				'orderby'        => 'rand',
+				'limit'          => 3,
+				'hide_invisible' => 0, // Include all curated links.
+			)
+		);
+
 		// If we have some search results for the links, we show them to the user.
-		if ( $result && is_array( $result ) && count( $result ) > 0 ) {
-			foreach ( $result as $rid => $link_post_object ) {
+		if ( ! empty( $bookmarks ) ) {
+			foreach ( $bookmarks as $bookmark ) {
 				$links_for_html[] = array(
-					'url'   => $link_post_object->link_url,
-					'title' => $link_post_object->link_name,
+					'url'   => $bookmark->link_url,
+					'title' => $bookmark->link_name,
 				);
-				$link_ids[]       = $link_post_object->link_id;
+				$link_ids[]       = $bookmark->link_id;
 			}
 		}
 
-		// Check if we need to add random links.
+		// Check if we need to add random links as a fallback.
 		$include_random = get_option( 'socratic_include_random_links', false );
 		if ( $include_random && count( $links_for_html ) < 3 ) {
-			$needed = 3 - count( $links_for_html );
-			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Including Random. Needed: ', $needed ), true ), FILE_APPEND ); // phpcs:ignore
+			$needed      = 3 - count( $links_for_html );
 			$exclude_ids = implode( ',', $link_ids );
 
 			$random_links = get_bookmarks(
@@ -332,11 +263,9 @@ class Socrates_Helpers {
 					'orderby'        => 'rand',
 					'limit'          => $needed,
 					'exclude'        => $exclude_ids,
-					'hide_invisible' => 1, // Don't show links that haven't been published yet.
+					'hide_invisible' => 0, // Include all curated links.
 				)
 			);
-
-			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Random Links: ', $random_links ), true ), FILE_APPEND ); // phpcs:ignore
 
 			if ( ! empty( $random_links ) ) {
 				foreach ( $random_links as $random_link ) {
@@ -352,8 +281,6 @@ class Socrates_Helpers {
 		$response_links                   = array();
 		$response_links['links_for_html'] = $links_for_html;
 		$response_links['link_ids']       = $link_ids;
-
-		// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Response Links: ', $response_links ), true ), FILE_APPEND ); // phpcs:ignore
 
 		return $response_links;
 	}//end get_links_for_response()
@@ -410,7 +337,7 @@ class Socrates_Helpers {
 	 */
 	public static function socrates_generate_chat_id() {
 
-		$chat_id = md5( time() . get_current_user_id() . rand() );
+		$chat_id = md5( time() . get_current_user_id() . wp_rand() );
 
 		// Escape this chat ID.
 		$chat_id = esc_attr( $chat_id );
@@ -436,7 +363,7 @@ class Socrates_Helpers {
 		$default_chat = array(
 			'messages'        => array(
 				array(
-					'role'    => 'user',
+					'role'    => 'system',
 					'content' => $initial_prompt,
 				),
 				array(
@@ -480,8 +407,8 @@ class Socrates_Helpers {
 	/**
 	 * Limit text to a certain number of words. Will truncate the text and append '...' to the end.
 	 *
-	 * @param  [type] $text
-	 * @param  [type] $limit
+	 * @param  [type] $text Text to limit.
+	 * @param  [type] $limit Word limit.
 	 *
 	 * Usage: $limited_text = \UBC\CTLT\Socrates_Helpers::limit_text( $text, 5 );
 	 *
@@ -518,9 +445,9 @@ class Socrates_Helpers {
 			return false;
 		}
 
-		$chat_id = $_GET['chat_id'];
+		$chat_id = wp_unslash( $_GET['chat_id'] );
 
-		// sanitize the chat_id
+		// sanitize the chat_id.
 		$chat_id = self::socrates_sanitize_chat_id( $chat_id );
 
 		return $chat_id;
@@ -532,7 +459,7 @@ class Socrates_Helpers {
 	 *
 	 * Usage: $chat_id = \UBC\CTLT\Socrates_Helpers::socrates_sanitize_chat_id( $chat_id );
 	 *
-	 * @param string $chat_id
+	 * @param string $chat_id The chat ID.
 	 * @return string|false The sanitized chat_id or false if not valid or not set.
 	 * @since 3.0.1
 	 */
@@ -551,7 +478,7 @@ class Socrates_Helpers {
 	 * Retrieve and log the available models from ChatGPT using the API key stored in options.
 	 * Called if llm-quick-check=models is in the URL
 	 *
-	 * @return array The available models
+	 * @return void
 	 * @since 3.0.1
 	 */
 	public static function socrates_get_chatgpt_models() {
@@ -561,15 +488,14 @@ class Socrates_Helpers {
 		$client = \OpenAI::client( $api_key );
 
 		$response = $client->models()->list();
-		$response = $response->toArray()['data'];
-
-		// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( $response, true ), FILE_APPEND ); // phpcs:ignore
+		$response->toArray();
 	}//end socrates_get_chatgpt_models()
 
 	/**
 	 * Retrieve an image from ChatGPT using the API key stored in options.
 	 * Called if llm-quick-check=image is in the URL
 	 *
+	 * @param string $image_prompt The prompt for the image.
 	 * @return void
 	 * @since 3.0.1
 	 */
@@ -613,7 +539,7 @@ class Socrates_Helpers {
 
 		$response = $response->toArray()['data'];
 
-		wp_die( '<img src="' . esc_url( $response[0]['url'] ) . '" alt="' . sanitize_text_field( $generated_image_prompt ) . '" />' );
+		wp_die( '<img src="' . esc_url( $response[0]['url'] ) . '" alt="' . esc_attr( $generated_image_prompt ) . '" />' );
 	}//end socrates_get_image_from_prompt()
 
 
@@ -633,30 +559,30 @@ class Socrates_Helpers {
 		$speech_params = array(
 			'model' => 'tts-1-hd',
 			'input' => 'Question 2: Thinking about loot boxes in video games, how do you think the current legal framework surrounding consumer protection and gambling applies to this issue? Consider aspects such as age restrictions, transparency, and the potential for addiction.',
-			'voice' => 'shimmer', // alloy, echo, fable, onyx, nova, shimmer
+			'voice' => 'shimmer', // alloy, echo, fable, onyx, nova, shimmer.
 		);
 
 		$response = $client->audio()->speech( $speech_params );
 
-		// Check if the API call was successful
+		// Check if the API call was successful.
 		if ( isset( $response['error'] ) ) {
-			wp_die( $response['error'] );
+			wp_die( esc_html( $response['error'] ) );
 		}
 
 		// The response is just the MP3 content.
 		$mp3_content = $response;
 
-		// Specify the path and filename for the audio file
+		// Specify the path and filename for the audio file.
 		$upload_dir      = wp_upload_dir();
 		$upload_path     = $upload_dir['basedir'];
 		$audio_file_path = trailingslashit( $upload_path ) . $speech_params['voice'] . '-audio-' . time() . '.mp3';
 
-		// Save the binary data to a file
+		// Save the binary data to a file.
 		// file_put_contents( $audio_file_path, $mp3_content );
 
-		// At this point, you have the audio file saved on your server
-		// You can provide a link to download it or embed it in a webpage
-		wp_die( 'Audio file created at: ' . $audio_file_path );
+		// At this point, you have the audio file saved on your server.
+		// You can provide a link to download it or embed it in a webpage.
+		wp_die( 'Audio file created at: ' . esc_html( $audio_file_path ) );
 	}//end socrates_get_audio_of_chat()
 
 
@@ -665,7 +591,7 @@ class Socrates_Helpers {
 	 *
 	 * Usage: $response = \UBC\CTLT\Socrates_Helpers::get_response_string_external( $response );
 	 *
-	 * @param  [type] $llm_response_data
+	 * @param  object $llm_response_data The data from the LLM.
 	 *
 	 * @return string
 	 * @since 3.0.1
@@ -697,7 +623,7 @@ class Socrates_Helpers {
 	 *
 	 * Usage: $socratic_chats = \UBC\CTLT\Socrates_Helpers::get_socratic_chats_for_user( $user_id );
 	 *
-	 * @param  int $user_id
+	 * @param  int $user_id The user ID.
 	 *
 	 * @return array $socratic_chats An array of socratic chats for this user. Empty array if none exist.
 	 * @since 3.0.1
@@ -752,11 +678,11 @@ class Socrates_Helpers {
 		}
 
 		// Specifically requesting a new chat? New chat.
-		if ( isset( $_GET['new-socratic-chat'] ) && 1 === absint( $_GET['new-socratic-chat'] ) ) {
+		if ( isset( $_GET['new-socratic-chat'] ) && 1 === absint( wp_unslash( $_GET['new-socratic-chat'] ) ) ) {
 			return true;
 		}
 
-		// Not a new chat. (This will therefore go on to load the user's most recent chat)
+		// Not a new chat. (This will therefore go on to load the user's most recent chat).
 		return false;
 	}//end is_this_a_new_chat()
 
@@ -805,8 +731,8 @@ class Socrates_Helpers {
 	 *
 	 * Usage: $can_user_view_chat = \UBC\CTLT\Socrates_Helpers::can_user_view_chat( $user_id, $chat_id );
 	 *
-	 * @param  int    $user_id
-	 * @param  string $chat_id
+	 * @param  int    $user_id The user ID.
+	 * @param  string $chat_id The chat ID.
 	 *
 	 * @return bool
 	 * @since 3.0.1
@@ -850,7 +776,7 @@ class Socrates_Helpers {
 	 *
 	 * Usage: \UBC\CTLT\Socrates_Helpers::show_error_message( $message_code );
 	 *
-	 * @param  string $message_code
+	 * @param  string $message_code The message code.
 	 *
 	 * @return string
 	 * @since 3.0.1
@@ -874,13 +800,13 @@ class Socrates_Helpers {
 		switch ( $message_code ) {
 
 			case 'user_cant_view_chat':
-				$url     = strtok( $_SERVER['REQUEST_URI'], '?' ) . '?new-socratic-chat=1';
+				$url     = strtok( wp_unslash( $_SERVER['REQUEST_URI'] ), '?' ) . '?new-socratic-chat=1';
 				$message = "<p>The requested chat is not available for your user account. <a href='" . $url . "'>Start a new chat</a>.</p>";
 
 				return wp_kses_post( $message );
 
 			case 'must_log_in':
-				$redirect_url            = strtok( $_SERVER['REQUEST_URI'], '?' );
+				$redirect_url            = strtok( wp_unslash( $_SERVER['REQUEST_URI'] ), '?' );
 				$login_url_with_redirect = wp_login_url( $redirect_url );
 				$message                 = "<p>You must be signed in to use this tool. <a href='" . esc_url( $login_url_with_redirect ) . "'>Sign In</a>.</p>";
 
@@ -897,7 +823,7 @@ class Socrates_Helpers {
 	 *
 	 * Usage: $created_bookmarks = \UBC\CTLT\Socrates_Helpers::create_bookmarks( $categorized_and_scored_links );
 	 *
-	 * @param array $categorized_and_scored_links
+	 * @param array $categorized_and_scored_links The links.
 	 * @since 3.0.1
 	 * @return int Number of bookmarks created.
 	 */
@@ -927,27 +853,48 @@ class Socrates_Helpers {
 		require_once UBC_SELFSOCV3_DIR . 'inc/admin/class-socrates-notw-post-creator.php';
 
 		// Initialize NotW post creator class.
-		$newly_created_post_id = new \UBC\CTLT\Socrates_Notw_Post_Creator();
+		$notw_post_creator = new \UBC\CTLT\Socrates_Notw_Post_Creator();
 
-		return $newly_created_post_id;
+		return $notw_post_creator->newly_created_post_id;
 	}//end create_notw_post_from_unpublished_links()
 
+	/**
+	 * Add custom cron schedules.
+	 *
+	 * @param array $schedules The schedules.
+	 * @return array
+	 */
 	public static function socrates_add_cron_schedules( $schedules ) {
 		$schedules['every_other_day'] = array(
-			'interval' => 172800, // 2 days in seconds
+			'interval' => 172800, // 2 days in seconds.
 			'display'  => __( 'Every Other Day' ),
 		);
 		return $schedules;
 	}
 
+	/**
+	 * Activate cron jobs.
+	 *
+	 * @return void
+	 */
 	public static function socrates_activate() {
 		self::socrates_schedule_feed_fetch();
 	}
 
+	/**
+	 * Deactivate cron jobs.
+	 *
+	 * @return void
+	 */
 	public static function socrates_deactivate() {
 		wp_clear_scheduled_hook( 'socrates_fetch_feeds' );
 	}
 
+	/**
+	 * Schedule feed fetch.
+	 *
+	 * @return void
+	 */
 	public static function socrates_schedule_feed_fetch() {
 		$cadence = get_option( 'socratic_link_collection_cadence', 'Daily at Midnight' );
 
@@ -966,10 +913,23 @@ class Socrates_Helpers {
 		}
 	}
 
+	/**
+	 * Update feed schedule.
+	 *
+	 * @param  mixed $old_value Old value.
+	 * @param  mixed $new_value New value.
+	 * @param  mixed $option Option.
+	 * @return void
+	 */
 	public static function socrates_update_feed_schedule( $old_value, $new_value, $option ) {
 		self::socrates_schedule_feed_fetch();
 	}
 
+	/**
+	 * Cron job to fetch feeds.
+	 *
+	 * @return void
+	 */
 	public static function socrates_cron_fetch_feeds() {
 
 		// Let's get the feeds from the settings.

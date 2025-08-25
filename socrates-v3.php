@@ -316,29 +316,87 @@ class SocratesV3 {
 		// Add the current reply to the existing messages.
 		$messages[] = $current_reply;
 
+		// Get categories for link suggestion, excluding 'Other'.
+		$categories         = get_option( 'socratic_categories', array() );
+		$categories_for_llm = array_filter(
+			$categories,
+			function ( $category ) {
+				return 0 !== strcasecmp( $category, 'Other' );
+			}
+		);
+		$categories_for_llm = array_values( $categories_for_llm ); // Re-index array.
+
+		$use_json_mode = ! empty( $categories_for_llm );
+
+		if ( $use_json_mode ) {
+			$categories_json = wp_json_encode( $categories_for_llm );
+
+			// Append instructions for JSON output and categorization to the last user message.
+			$json_instructions = "\n\n---\n\nDeveloper instructions:\n" .
+				'You must provide your response in JSON format. The JSON object must contain two keys: "reply" and "category".' . "\n" .
+				'The "reply" key must contain your Socratic response to the user\'s message.' . "\n" .
+				'The "category" key must be one of the following values, based on which category best fits the user\'s message: ' . $categories_json . "\n" .
+				'You must choose one of the provided categories. Your choice should reflect the main topic of the last message.' . "\n" .
+				"If none of the categories are a good fit for the user's message, you MUST return an empty string for the 'category' value." . "\n" .
+				"Example of your response format:\n" .
+				"{\n" .
+				'  "reply": "Your Socratic question here.",' . "\n" .
+				'  "category": "A.I."' . "\n" .
+				'}';
+
+			// Get the last message from the history to append our instructions.
+			$last_message_index                          = count( $messages ) - 1;
+			$messages[ $last_message_index ]['content'] .= $json_instructions;
+		}
+
 		// Add this to the conversation; send to LLM, Add to User Meta.
 		require_once plugin_dir_path( __FILE__ ) . 'inc/admin/class-socrates-send-llm-request.php';
 
 		// Send the prompt to the LLM.
 		$request = new Socrates_Send_LLM_Request();
 		$request->set_prompt( $messages );
-		$request->send_request();
+
+		// Log the prompt being sent to the LLM.
+		file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- PROMPT SENT TO LLM ---\n" . print_r( $messages, true ) . "\n\n", FILE_APPEND ); // phpcs:ignore
+
+		$request->send_request( $use_json_mode );
 
 		// This is the response from the LLM, now potentially an array with reasoning.
-		$llm_response_data = $request->get_llm_response_data( false );
+		$llm_response_data = $request->get_llm_response_data();
+
+		// Log the raw response from the LLM.
+		file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- RAW RESPONSE FROM LLM ---\n" . print_r( $llm_response_data, true ) . "\n\n", FILE_APPEND ); // phpcs:ignore
 
 		// Check for errors returned by the LLM request/parsing process.
-		if ( is_string( $llm_response_data ) && strpos( $llm_response_data, 'Error: ' ) === 0 ) {
-			wp_send_json_error( array( 'message' => $llm_response_data ) );
+		$response_parts = $request->abstract_data_from_llm_response( $use_json_mode );
+
+		if ( is_string( $response_parts ) && 0 === strpos( $response_parts, 'Error: ' ) ) {
+			wp_send_json_error( array( 'message' => $response_parts ) );
 		}
 
-		// Extract reasoning and main response parts.
-		$reasoning         = isset( $llm_response_data['reasoning'] ) ? $llm_response_data['reasoning'] : null;
-		$main_response_raw = isset( $llm_response_data['response'] ) ? $llm_response_data['response'] : '';
+		if ( $use_json_mode ) {
+			// In JSON mode, $response_parts is the JSON string.
+			$response_data = json_decode( $response_parts, true );
 
-		// Sanitize the response parts.
-		$llm_response_string = wp_kses_post( $main_response_raw );
-		$sanitized_reasoning = $reasoning ? wp_kses_post( $reasoning ) : null;
+			if ( JSON_ERROR_NONE !== json_last_error() || ! isset( $response_data['reply'] ) || ! isset( $response_data['category'] ) ) {
+				$llm_response_string = $response_parts; // Fallback to raw string.
+				$llm_category        = 'Other';
+			} else {
+				$llm_response_string = $response_data['reply'];
+				// If the LLM returns an empty category, default to 'Other' for link fallback purposes.
+				$llm_category = ! empty( $response_data['category'] ) ? $response_data['category'] : 'Other';
+			}
+			$sanitized_reasoning = null; // No reasoning in JSON mode.
+		} else {
+			// In non-JSON mode, $response_parts is an array with 'response' and 'reasoning'.
+			$llm_response_string = $response_parts['response'];
+			$reasoning           = $response_parts['reasoning'];
+			$sanitized_reasoning = $reasoning ? wp_kses_post( $reasoning ) : null;
+			$llm_category        = 'Other'; // No category context.
+		}
+
+		// Sanitize the response string.
+		$llm_response_string = wp_kses_post( $llm_response_string );
 
 		// If the main response is empty after validation, return an error.
 		if ( empty( $llm_response_string ) ) {
@@ -347,7 +405,7 @@ class SocratesV3 {
 
 		// If this is the user's 1st actual reply, we need to set it as the summary.
 		// The 1st and 2nd messages are the initial prompt and the first reply.
-		if ( count( $chats[ $chat_id ]['messages'] ) === 2 ) {
+		if ( 2 === count( $chats[ $chat_id ]['messages'] ) ) {
 			$chats[ $chat_id ]['summary'] = \UBC\CTLT\Socrates_Helpers::limit_text( $reply, 5 );
 		}
 
@@ -365,7 +423,7 @@ class SocratesV3 {
 		$chats[ $chat_id ]['messages'] = $messages;
 
 		// Get relevant links based on the main response string.
-		$links_results  = \UBC\CTLT\Socrates_Helpers::get_links_for_response( $llm_response_string );
+		$links_results  = \UBC\CTLT\Socrates_Helpers::get_links_for_response( $llm_category );
 		$links_for_html = $links_results['links_for_html'];
 		$link_ids       = $links_results['link_ids'];
 
@@ -390,25 +448,22 @@ class SocratesV3 {
 
 		// Check the setting for showing reasoning.
 		$show_reasoning = (bool) get_option( 'socratic_show_reasoning', false );
-		// Sanitize reasoning if it exists
-		$sanitized_reasoning = isset( $reasoning ) ? wp_kses_post( $reasoning ) : null;
 
-		// Debug: Log what we're about to send in the JSON response
-		// file_put_contents(
-		// WP_CONTENT_DIR . '/debug.log',
-		// print_r(
-		// array(
-		// 'Socrates JSON Response' => array(
-		// 'message'        => $llm_response_string,
-		// 'links'          => $links_for_html,
-		// 'show_reasoning' => $show_reasoning,
-		// 'reasoning'      => ( $show_reasoning && ! empty( $sanitized_reasoning ) ) ? $sanitized_reasoning : null,
-		// ),
-		// ),
-		// true
-		// ),
-		// FILE_APPEND
-		// );
+		// Debug: Log what we're about to send in the JSON response.
+		file_put_contents(
+			WP_CONTENT_DIR . '/debug.log',
+			"--- RESPONSE SENT TO CLIENT ---\n" . print_r(
+				array(
+					'Socrates JSON Response' => array(
+						'message'   => $llm_response_string,
+						'links'     => $links_for_html,
+						'reasoning' => ( $show_reasoning && ! empty( $sanitized_reasoning ) ) ? $sanitized_reasoning : null,
+					),
+				),
+				true
+			) . "\n\n",
+			FILE_APPEND
+		);
 
 		// Send the successful response back to the front-end.
 		wp_send_json_success(

@@ -127,26 +127,26 @@ class Socrates_LLM_Ollama {
 	 * @return mixed The response object from the API or an error array.
 	 */
 	public function make_request( $client, $request ) {
-		// Log the request being sent (optional, for debugging).
-		// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Ollama Request' => $request ), true ), FILE_APPEND );
+		// Log the request being sent.
+		file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- OLLAMA REQUEST SENT ---\n" . print_r( $request, true ) . "\n\n", FILE_APPEND );
 
 		try {
 			// Use the chat()->create method from the ardagnsrn/ollama-php library.
 			$response = $client->chat()->create( $request );
 
-			// Log the successful response (optional).
-			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Ollama Response' => $response->toArray() ), true ), FILE_APPEND );
+			// Log the successful response.
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- OLLAMA RESPONSE RECEIVED ---\n" . print_r( $response, true ) . "\n\n", FILE_APPEND );
 			return $response;
 		} catch ( OllamaErrorException $e ) {
 			// Log specific Ollama library errors.
-			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Ollama API Error' => $e->getMessage(), 'Request' => $request ), true ), FILE_APPEND ); // phpcs:ignore
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Ollama API Error' => $e->getMessage(), 'Request' => $request ), true ), FILE_APPEND ); // phpcs:ignore
 			return array(
 				'error'   => true,
 				'message' => 'Ollama API Error: ' . $e->getMessage(),
 			);
 		} catch ( \Exception $e ) {
 			// Log general errors (e.g., connection issues).
-			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Ollama General Error' => $e->getMessage(), 'Request' => $request ), true ), FILE_APPEND ); // phpcs:ignore
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Ollama General Error' => $e->getMessage(), 'Request' => $request ), true ), FILE_APPEND ); // phpcs:ignore
 			return array(
 				'error'   => true,
 				'message' => 'Ollama Connection/General Error: ' . $e->getMessage(),
@@ -172,14 +172,19 @@ class Socrates_LLM_Ollama {
 
 		// Validate the response object structure from ardagnsrn/ollama-php.
 		if ( ! is_object( $llm_response_data ) || ! property_exists( $llm_response_data, 'message' ) || ! is_object( $llm_response_data->message ) || ! property_exists( $llm_response_data->message, 'content' ) ) {
-			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Invalid Ollama Response Object Structure' => $llm_response_data ), true ), FILE_APPEND ); // phpcs:ignore
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Invalid Ollama Response Object Structure' => $llm_response_data ), true ), FILE_APPEND ); // phpcs:ignore
 			return 'Error: Invalid response structure from Ollama client.';
 		}
 
 		// Get the primary response content.
 		$raw_content = $llm_response_data->message->content;
 
-		// --- Reasoning Extraction Logic ---
+		// If JSON mode was used, the raw content should be the JSON string.
+		if ( $use_json_mode ) {
+			return $raw_content;
+		}
+
+		// --- Reasoning Extraction Logic (for non-JSON mode) ---
 		$reasoning     = null;
 		$main_response = $raw_content;
 
@@ -199,53 +204,6 @@ class Socrates_LLM_Ollama {
 		if ( ! empty( $reasoning_pattern ) && preg_match( $reasoning_pattern, $raw_content, $matches ) && count( $matches ) === 4 ) {
 			$reasoning     = trim( $matches[2] ); // Captured reasoning content.
 			$main_response = trim( $matches[3] ); // Captured main response content.
-		}
-
-		/**
-		 * Filters the extracted reasoning and main response parts from raw LLM output.
-		 *
-		 * @since 3.5.0
-		 * @param array  $extracted_parts { Array containing 'reasoning' and 'main_response' }
-		 * @param string $raw_content The raw content string received from the LLM.
-		 * @param bool   $use_json_mode Whether the request was made in JSON mode.
-		 * @param object $llm_instance The instance of the current LLM class (Socrates_LLM_Ollama).
-		 */
-		$extracted_parts = apply_filters(
-			'socrates_extract_reasoning_parts',
-			array(
-				'reasoning'     => $reasoning,
-				'main_response' => $main_response,
-			),
-			$raw_content,
-			$use_json_mode,
-			$this
-		);
-
-		// Use potentially filtered parts.
-		$reasoning     = isset( $extracted_parts['reasoning'] ) ? $extracted_parts['reasoning'] : null;
-		$main_response = isset( $extracted_parts['main_response'] ) ? $extracted_parts['main_response'] : $raw_content;
-		// --- End Reasoning Extraction ---
-
-		// If JSON mode was used, decode and validate the main response part.
-		if ( $use_json_mode ) {
-			$decoded_json = json_decode( $main_response, true ); // Decode as associative array.
-
-			// Check for JSON decoding errors.
-			if ( json_last_error() !== JSON_ERROR_NONE ) {
-				// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Ollama JSON Decode Error' => json_last_error_msg(), 'Content Received' => $main_response ), true ), FILE_APPEND ); // phpcs:ignore
-				return null; // Indicate failure.
-			}
-
-			// Basic validation: Ensure it's an array (as we expect a list of objects for NOTW).
-			if ( ! is_array( $decoded_json ) ) {
-				// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Ollama JSON Validation Error' => 'Decoded JSON is not an array.', 'Content Received' => $main_response ), true ), FILE_APPEND ); // phpcs:ignore
-				return null; // Indicate structure validation failure.
-			}
-
-			// Optional: Add more specific validation here later if needed.
-
-			return $decoded_json; // Return the successfully decoded array.
-
 		}
 
 		// If not JSON mode, return the extracted parts.

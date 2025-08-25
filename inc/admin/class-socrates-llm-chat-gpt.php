@@ -105,16 +105,17 @@ class Socrates_LLM_Chat_Gpt {
 	 */
 	public function make_request( $client, $request ) {
 
-		// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'OpenAI Request' => $request ), true ), FILE_APPEND ); // phpcs:ignore
+		file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- OPENAI REQUEST SENT ---\n" . print_r( $request, true ) . "\n\n", FILE_APPEND ); // phpcs:ignore
 
 		try {
 
 			$data = $client->chat()->create( $request );
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- OPENAI RESPONSE RECEIVED ---\n" . print_r( $data, true ) . "\n\n", FILE_APPEND ); // phpcs:ignore
 			return $data;
 
 		} catch ( \OpenAI\Exceptions\ErrorException $e ) {
 
-			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'API Error' => $e->getMessage() ), true ), FILE_APPEND ); // phpcs:ignore
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'OpenAI API Error' => $e->getMessage() ), true ), FILE_APPEND ); // phpcs:ignore
 
 			return array(
 				'error'   => true,
@@ -123,7 +124,7 @@ class Socrates_LLM_Chat_Gpt {
 
 		} catch ( \Exception $e ) {
 
-			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Unexpected Error' => $e->getMessage() ), true ), FILE_APPEND ); // phpcs:ignore
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'OpenAI Unexpected Error' => $e->getMessage() ), true ), FILE_APPEND ); // phpcs:ignore
 
 			return array(
 				'error'   => true,
@@ -152,16 +153,28 @@ class Socrates_LLM_Chat_Gpt {
 			return 'Error: ' . $llm_response_data['message'];
 		}
 
+		// Check for API errors returned in the response object.
+		if ( isset( $llm_response_data->error ) ) {
+			$error_message = 'OpenAI API Error: ' . ( $llm_response_data->error->message ?? 'Unknown error' );
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'OpenAI Response Error' => $llm_response_data->error ), true ), FILE_APPEND ); // phpcs:ignore
+			return 'Error: ' . $error_message;
+		}
+
 		// Check if the response structure is valid.
 		if ( ! isset( $llm_response_data->choices[0]->message->content ) ) {
-			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Invalid OpenAI Response Structure' => $llm_response_data ), true ), FILE_APPEND ); // phpcs:ignore
+			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Invalid OpenAI Response Structure' => $llm_response_data ), true ), FILE_APPEND ); // phpcs:ignore
 			return 'Error: Invalid response structure from OpenAI.';
 		}
 
 		// Get the primary response content.
 		$raw_content = $llm_response_data->choices[0]->message->content;
 
-		// --- Reasoning Extraction Logic ---
+		// If JSON mode was used, the raw content should be the JSON string.
+		if ( $use_json_mode ) {
+			return $raw_content;
+		}
+
+		// --- Reasoning Extraction Logic (for non-JSON mode) ---
 		$reasoning     = null;
 		$main_response = $raw_content;
 
@@ -181,50 +194,6 @@ class Socrates_LLM_Chat_Gpt {
 		if ( ! empty( $reasoning_pattern ) && preg_match( $reasoning_pattern, $raw_content, $matches ) && count( $matches ) === 4 ) {
 			$reasoning     = trim( $matches[2] ); // Captured reasoning content.
 			$main_response = trim( $matches[3] ); // Captured main response content.
-		}
-
-		/**
-		 * Filters the extracted reasoning and main response parts from raw LLM output.
-		 *
-		 * @since 3.5.0
-		 * @param array  $extracted_parts { Array containing 'reasoning' and 'main_response' }
-		 * @param string $raw_content The raw content string received from the LLM.
-		 * @param bool   $use_json_mode Whether the request was made in JSON mode.
-		 * @param object $llm_instance The instance of the current LLM class (Socrates_LLM_Chat_Gpt).
-		 */
-		$extracted_parts = apply_filters(
-			'socrates_extract_reasoning_parts',
-			array(
-				'reasoning'     => $reasoning,
-				'main_response' => $main_response,
-			),
-			$raw_content,
-			$use_json_mode,
-			$this
-		);
-
-		// Use potentially filtered parts.
-		$reasoning     = isset( $extracted_parts['reasoning'] ) ? $extracted_parts['reasoning'] : null;
-		$main_response = isset( $extracted_parts['main_response'] ) ? $extracted_parts['main_response'] : $raw_content;
-		// --- End Reasoning Extraction ---
-
-		// If JSON mode was used, decode and validate the main response part.
-		if ( $use_json_mode ) {
-			$decoded_json = json_decode( $main_response, true ); // Decode as associative array.
-
-			// Check for JSON decoding errors.
-			if ( json_last_error() !== JSON_ERROR_NONE ) {
-				// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'ChatGPT JSON Decode Error' => json_last_error_msg(), 'Content Received' => $main_response ), true ), FILE_APPEND ); // phpcs:ignore
-				return null; // Indicate failure.
-			}
-
-			// Basic validation: Ensure it's an array.
-			if ( ! is_array( $decoded_json ) ) {
-				// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'ChatGPT JSON Validation Error' => 'Decoded JSON is not an array.', 'Content Received' => $main_response ), true ), FILE_APPEND ); // phpcs:ignore
-				return null; // Indicate failure.
-			}
-
-			return $decoded_json; // Return the successfully decoded array.
 		}
 
 		// If not JSON mode, return the extracted parts.

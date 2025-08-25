@@ -280,9 +280,8 @@ class Socrates_Send_LLM_Request {
 	 *               Returns error string if the initial response indicates an error.
 	 * @since 3.0.1 (Modified in 3.5.0 to reflect reasoning return type)
 	 */
-	public function get_llm_response_data( $use_json_mode = false ) {
-
-		return $this->abstract_data_from_llm_response( $use_json_mode );
+	public function get_llm_response_data() {
+		return $this->llm_response_data;
 	}//end get_llm_response_data()
 
 
@@ -297,7 +296,9 @@ class Socrates_Send_LLM_Request {
 	 * @since 3.0.1 (Modified in 3.5.0 to reflect reasoning return type)
 	 */
 	public function abstract_data_from_llm_response( $use_json_mode = false ) {
-
+		if ( empty( $this->llm_response_data ) ) {
+			return 'Error: No LLM response data to process. Call send_request() first.';
+		}
 		return $this->client_class->get_response_string( $this->llm_response_data, $use_json_mode );
 	}//end abstract_data_from_llm_response()
 }
