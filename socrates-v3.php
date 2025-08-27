@@ -316,6 +316,9 @@ class SocratesV3 {
 		// Add the current reply to the existing messages.
 		$messages[] = $current_reply;
 
+		// Create a copy of the messages to be sent to the LLM, as we may modify it.
+		$messages_for_llm = $messages;
+
 		// Get categories for link suggestion, excluding 'Other'.
 		$categories         = get_option( 'socratic_categories', array() );
 		$categories_for_llm = array_filter(
@@ -345,8 +348,8 @@ class SocratesV3 {
 				'}';
 
 			// Get the last message from the history to append our instructions.
-			$last_message_index                          = count( $messages ) - 1;
-			$messages[ $last_message_index ]['content'] .= $json_instructions;
+			$last_message_index                                  = count( $messages_for_llm ) - 1;
+			$messages_for_llm[ $last_message_index ]['content'] .= $json_instructions;
 		}
 
 		// Add this to the conversation; send to LLM, Add to User Meta.
@@ -354,10 +357,10 @@ class SocratesV3 {
 
 		// Send the prompt to the LLM.
 		$request = new Socrates_Send_LLM_Request();
-		$request->set_prompt( $messages );
+		$request->set_prompt( $messages_for_llm );
 
 		// Log the prompt being sent to the LLM.
-		file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- PROMPT SENT TO LLM ---\n" . print_r( $messages, true ) . "\n\n", FILE_APPEND ); // phpcs:ignore
+		file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- PROMPT SENT TO LLM ---\n" . print_r( $messages_for_llm, true ) . "\n\n", FILE_APPEND ); // phpcs:ignore
 
 		$request->send_request( $use_json_mode );
 
