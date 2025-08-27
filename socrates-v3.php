@@ -360,7 +360,7 @@ class SocratesV3 {
 		$request->set_prompt( $messages_for_llm );
 
 		// Log the prompt being sent to the LLM.
-		file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- PROMPT SENT TO LLM ---\n" . print_r( $messages_for_llm, true ) . "\n\n", FILE_APPEND ); // phpcs:ignore
+		// file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- PROMPT SENT TO LLM ---\n" . print_r( $messages_for_llm, true ) . "\n\n", FILE_APPEND ); // phpcs:ignore
 
 		$request->send_request( $use_json_mode );
 
@@ -368,7 +368,7 @@ class SocratesV3 {
 		$llm_response_data = $request->get_llm_response_data();
 
 		// Log the raw response from the LLM.
-		file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- RAW RESPONSE FROM LLM ---\n" . print_r( $llm_response_data, true ) . "\n\n", FILE_APPEND ); // phpcs:ignore
+		// file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- RAW RESPONSE FROM LLM ---\n" . print_r( $llm_response_data, true ) . "\n\n", FILE_APPEND ); // phpcs:ignore
 
 		// Check for errors returned by the LLM request/parsing process.
 		$response_parts = $request->abstract_data_from_llm_response( $use_json_mode );
@@ -453,20 +453,20 @@ class SocratesV3 {
 		$show_reasoning = (bool) get_option( 'socratic_show_reasoning', false );
 
 		// Debug: Log what we're about to send in the JSON response.
-		file_put_contents(
-			WP_CONTENT_DIR . '/debug.log',
-			"--- RESPONSE SENT TO CLIENT ---\n" . print_r(
-				array(
-					'Socrates JSON Response' => array(
-						'message'   => $llm_response_string,
-						'links'     => $links_for_html,
-						'reasoning' => ( $show_reasoning && ! empty( $sanitized_reasoning ) ) ? $sanitized_reasoning : null,
-					),
-				),
-				true
-			) . "\n\n",
-			FILE_APPEND
-		);
+		// file_put_contents(
+		// WP_CONTENT_DIR . '/debug.log',
+		// "--- RESPONSE SENT TO CLIENT ---\n" . print_r(
+		// array(
+		// 'Socrates JSON Response' => array(
+		// 'message'   => $llm_response_string,
+		// 'links'     => $links_for_html,
+		// 'reasoning' => ( $show_reasoning && ! empty( $sanitized_reasoning ) ) ? $sanitized_reasoning : null,
+		// ),
+		// ),
+		// true
+		// ) . "\n\n",
+		// FILE_APPEND
+		// );
 
 		// Send the successful response back to the front-end.
 		wp_send_json_success(

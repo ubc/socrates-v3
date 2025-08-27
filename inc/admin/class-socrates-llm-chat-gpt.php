@@ -105,17 +105,17 @@ class Socrates_LLM_Chat_Gpt {
 	 */
 	public function make_request( $client, $request ) {
 
-		file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- OPENAI REQUEST SENT ---\n" . print_r( $request, true ) . "\n\n", FILE_APPEND ); // phpcs:ignore
+		// file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- OPENAI REQUEST SENT ---\n" . print_r( $request, true ) . "\n\n", FILE_APPEND ); // phpcs:ignore
 
 		try {
 
 			$data = $client->chat()->create( $request );
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- OPENAI RESPONSE RECEIVED ---\n" . print_r( $data, true ) . "\n\n", FILE_APPEND ); // phpcs:ignore
+			// file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- OPENAI RESPONSE RECEIVED ---\n" . print_r( $data, true ) . "\n\n", FILE_APPEND ); // phpcs:ignore
 			return $data;
 
 		} catch ( \OpenAI\Exceptions\ErrorException $e ) {
 
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'OpenAI API Error' => $e->getMessage() ), true ), FILE_APPEND ); // phpcs:ignore
+			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'OpenAI API Error' => $e->getMessage() ), true ), FILE_APPEND ); // phpcs:ignore
 
 			return array(
 				'error'   => true,
@@ -124,7 +124,7 @@ class Socrates_LLM_Chat_Gpt {
 
 		} catch ( \Exception $e ) {
 
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'OpenAI Unexpected Error' => $e->getMessage() ), true ), FILE_APPEND ); // phpcs:ignore
+			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'OpenAI Unexpected Error' => $e->getMessage() ), true ), FILE_APPEND ); // phpcs:ignore
 
 			return array(
 				'error'   => true,
@@ -156,13 +156,13 @@ class Socrates_LLM_Chat_Gpt {
 		// Check for API errors returned in the response object.
 		if ( isset( $llm_response_data->error ) ) {
 			$error_message = 'OpenAI API Error: ' . ( $llm_response_data->error->message ?? 'Unknown error' );
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'OpenAI Response Error' => $llm_response_data->error ), true ), FILE_APPEND ); // phpcs:ignore
+			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'OpenAI Response Error' => $llm_response_data->error ), true ), FILE_APPEND ); // phpcs:ignore
 			return 'Error: ' . $error_message;
 		}
 
 		// Check if the response structure is valid.
 		if ( ! isset( $llm_response_data->choices[0]->message->content ) ) {
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Invalid OpenAI Response Structure' => $llm_response_data ), true ), FILE_APPEND ); // phpcs:ignore
+			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Invalid OpenAI Response Structure' => $llm_response_data ), true ), FILE_APPEND ); // phpcs:ignore
 			return 'Error: Invalid response structure from OpenAI.';
 		}
 

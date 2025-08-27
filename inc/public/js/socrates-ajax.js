@@ -181,6 +181,42 @@ function generateLinksHTML( links ) {
 }
 
 /**
+ * Simulates a streaming response by outputting a message word-by-word.
+ *
+ * @param {HTMLElement} element   - The HTML element to append the text to.
+ * @param {string}      message   - The message to stream.
+ * @param {function}    callback  - Function to call when streaming is complete.
+ */
+function simulateStreamingResponse(element, message, callback) {
+    // Replace newline characters with `<br>` tags surrounded by spaces to treat them as individual "words" during splitting.
+    const messageWithBreaks = message.replace(/\n/g, ' <br> ');
+    const words = messageWithBreaks.split(' ');
+    let i = 0;
+    const interval = 35; // The delay in milliseconds between each word. A lower number is faster.
+
+    element.innerHTML = ''; // Ensure the element is empty before starting.
+
+    const streamer = setInterval(function() {
+        if (i < words.length) {
+            // If the "word" is a `<br>` tag, append it as is.
+            if (words[i] === '<br>') {
+                element.innerHTML += '<br>';
+            } else if (words[i]) { // Append the word followed by a space, checking if it's not an empty string from multiple spaces.
+                element.innerHTML += words[i] + ' ';
+            }
+            i++;
+        } else {
+            // Once all words are appended, clear the interval.
+            clearInterval(streamer);
+            // If a callback function is provided, execute it.
+            if (callback) {
+                callback();
+            }
+        }
+    }, interval);
+}
+
+/**
  * Truncates a given text string after a specified number of words.
  *
  * @param {string} text - The string of text to truncate.
@@ -386,15 +422,31 @@ document.addEventListener( 'DOMContentLoaded', function() {
 						thinkingListItem.appendChild(details); // Prepend details section
 					}
 
-					// Create a div for the main response and links.
-					const mainResponseDiv = document.createElement('div');
-					mainResponseDiv.innerHTML = data.data.message.replace(/\n/g, '<br>') + generateLinksHTML( data.data.links );
+					// Create a span for the main response that will be streamed.
+					const mainResponseSpan = document.createElement('span');
 
-					// Append the main response div.
-					thinkingListItem.appendChild(mainResponseDiv);
+					// Append the main response span.
+					thinkingListItem.appendChild(mainResponseSpan);
 
-					// Apply fade-in animation now that content is set.
+					// Apply fade-in animation to the list item wrapper immediately. The content will stream in.
 					animateFadeIn(thinkingListItem);
+
+					// Simulate the streaming response.
+					simulateStreamingResponse( mainResponseSpan, data.data.message, function () {
+						// This is the callback function that runs after the streaming is complete.
+
+						// Generate the links HTML.
+						const linksHTML = generateLinksHTML( data.data.links );
+
+						// If there is link HTML, create a container, add the HTML, and fade it in.
+						if ( linksHTML ) {
+							const linksContainer = document.createElement( 'div' );
+							linksContainer.innerHTML = linksHTML;
+							linksContainer.style.opacity = '0';
+							thinkingListItem.appendChild( linksContainer );
+							animateFadeIn( linksContainer );
+						}
+					} );
 
 					// Clear the textarea to be ready for another reply.
 					clearTextarea( 'socratic_reply' );

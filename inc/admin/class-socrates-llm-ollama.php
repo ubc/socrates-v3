@@ -128,25 +128,25 @@ class Socrates_LLM_Ollama {
 	 */
 	public function make_request( $client, $request ) {
 		// Log the request being sent.
-		file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- OLLAMA REQUEST SENT ---\n" . print_r( $request, true ) . "\n\n", FILE_APPEND );
+		// file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- OLLAMA REQUEST SENT ---\n" . print_r( $request, true ) . "\n\n", FILE_APPEND );
 
 		try {
 			// Use the chat()->create method from the ardagnsrn/ollama-php library.
 			$response = $client->chat()->create( $request );
 
 			// Log the successful response.
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- OLLAMA RESPONSE RECEIVED ---\n" . print_r( $response, true ) . "\n\n", FILE_APPEND );
+			// file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- OLLAMA RESPONSE RECEIVED ---\n" . print_r( $response, true ) . "\n\n", FILE_APPEND );
 			return $response;
 		} catch ( OllamaErrorException $e ) {
 			// Log specific Ollama library errors.
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Ollama API Error' => $e->getMessage(), 'Request' => $request ), true ), FILE_APPEND ); // phpcs:ignore
+			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Ollama API Error' => $e->getMessage(), 'Request' => $request ), true ), FILE_APPEND ); // phpcs:ignore
 			return array(
 				'error'   => true,
 				'message' => 'Ollama API Error: ' . $e->getMessage(),
 			);
 		} catch ( \Exception $e ) {
 			// Log general errors (e.g., connection issues).
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Ollama General Error' => $e->getMessage(), 'Request' => $request ), true ), FILE_APPEND ); // phpcs:ignore
+			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Ollama General Error' => $e->getMessage(), 'Request' => $request ), true ), FILE_APPEND ); // phpcs:ignore
 			return array(
 				'error'   => true,
 				'message' => 'Ollama Connection/General Error: ' . $e->getMessage(),
@@ -172,7 +172,7 @@ class Socrates_LLM_Ollama {
 
 		// Validate the response object structure from ardagnsrn/ollama-php.
 		if ( ! is_object( $llm_response_data ) || ! property_exists( $llm_response_data, 'message' ) || ! is_object( $llm_response_data->message ) || ! property_exists( $llm_response_data->message, 'content' ) ) {
-			file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Invalid Ollama Response Object Structure' => $llm_response_data ), true ), FILE_APPEND ); // phpcs:ignore
+			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Invalid Ollama Response Object Structure' => $llm_response_data ), true ), FILE_APPEND ); // phpcs:ignore
 			return 'Error: Invalid response structure from Ollama client.';
 		}
 
