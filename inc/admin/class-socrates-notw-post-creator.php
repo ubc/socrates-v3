@@ -23,43 +23,59 @@ class Socrates_Notw_Post_Creator {
 	 * are creating. An array of arrays, each inner array has a top level
 	 * key of the category of the link, and values of the links within, each
 	 * with the URL and the title.
+	 *
+	 * @var array
 	 */
-	var $links = array();
+	private $links = array();
 
 	/**
 	 * Will be filled with the title of this week's post.
+	 *
+	 * @var string
 	 */
-	var $title = '';
+	private $title = '';
 
 	/**
 	 * Will be filled with the content of this week's post.
+	 *
+	 * @var string
 	 */
-	var $content = '';
+	private $content = '';
 
 	/**
 	 * Will be filled with the excerpt to be used.
+	 *
+	 * @var string
 	 */
-	var $excerpt = '';
+	private $excerpt = '';
 
 	/**
 	 * Will be filled with the category ID for the news of the week category.
+	 *
+	 * @var int
 	 */
-	var $category = 0;
+	private $category = 0;
 
 	/**
 	 * Will be filled with the status we'll use for the post.
+	 *
+	 * @var string
 	 */
-	var $post_status = '';
+	private $post_status = '';
 
 	/**
 	 * Will be filled with the post type.
+	 *
+	 * @var string
 	 */
-	var $post_type = '';
+	private $post_type = '';
 
 	/**
-	 * Will be filled with the post ID of the newly created NotW Post
+	 * Will be filled with the post ID of the newly created NotW Post.
+	 *
+	 * @var int|false
 	 */
-	var $newly_created_post_id = false;
+	private $newly_created_post_id = false;
 
 	/**
 	 * Initialize ourselves.
@@ -106,7 +122,7 @@ class Socrates_Notw_Post_Creator {
 			return;
 		}
 
-		// Now we need to remove the links that have 'Y' for link_visible
+		// Now we need to remove the links that have 'Y' for link_visible.
 		$usable_bookmarks = array();
 
 		foreach ( $all_bookmarks_in_categories as $lid => $bookmark_object ) {
@@ -183,10 +199,10 @@ class Socrates_Notw_Post_Creator {
 
 		if ( ! $include_other_cat || empty( $include_other_cat ) || 'no' === $include_other_cat ) {
 			// We're not including the other category, so lets exclude that from the get_terms call.
-			// We need to know the ID of the "Other" link_category
+			// We need to know the ID of the "Other" link_category.
 			$other_category_term = get_term_by( 'name', 'Other', 'link_category' );
-			// Nested Ifs. Oh no. If we have an 'Other' link category, get the ID and then exlude that
-			// from the params
+			// If we have an 'Other' link category, get the ID and then exlude that
+			// from the params.
 			if ( $other_category_term ) {
 				$get_terms_params['exclude'] = $other_category_term->term_id;
 			}
@@ -195,12 +211,12 @@ class Socrates_Notw_Post_Creator {
 		// Fetch all of the terms we need.
 		$needed_link_cats = get_terms( $get_terms_params );
 
-		// Double check we have some cats otherwise an empty string
+		// Double check we have some cats otherwise an empty string.
 		if ( ! $needed_link_cats || ! is_array( $needed_link_cats ) || empty( $needed_link_cats ) ) {
 			return '';
 		}
 
-		// Loop over each term, add IDs to an array and then convert that into a comma separated string
+		// Loop over each term, add IDs to an array and then convert that into a comma separated string.
 		$needed_cats_array = array();
 
 		foreach ( $needed_link_cats as $tid => $term_object ) {
@@ -263,7 +279,7 @@ class Socrates_Notw_Post_Creator {
 	 * @since 3.0.1
 	 */
 	public function get_week_date_string() {
-		return date( 'jS \of F Y', strtotime( 'sunday last week' ) );
+		return wp_date( 'jS \of F Y', strtotime( 'sunday last week' ) );
 	}//end get_week_date_string()
 
 
@@ -291,7 +307,7 @@ class Socrates_Notw_Post_Creator {
 	/**
 	 * For the passed link category ID, generate the content for this category of links.
 	 *
-	 * @param  int $link_category_id
+	 * @param  int $link_category_id The ID of the link category.
 	 *
 	 * @return string the content we'll use for this link category.
 	 * @since 3.0.1
@@ -330,7 +346,7 @@ class Socrates_Notw_Post_Creator {
 	/**
 	 * Get the name of the passed category.
 	 *
-	 * @param  int $link_category_id
+	 * @param  int $link_category_id The ID of the link category.
 	 *
 	 * @return string the name of the category.
 	 * @since 3.0.1
@@ -350,9 +366,9 @@ class Socrates_Notw_Post_Creator {
 	/**
 	 * generate the content for each list of links for the passed category ID.
 	 *
-	 * @param  int $link_category_id The ID of the category
+	 * @param  int $link_category_id The ID of the category.
 	 *
-	 * @return string the content
+	 * @return string the content.
 	 * @since 3.0.1
 	 */
 	public function get_link_list_content_for_category( $link_category_id ) {
@@ -571,7 +587,10 @@ class Socrates_Notw_Post_Creator {
 
 		$status = $this->post_status;
 
-		$post_edit_link = get_edit_post_link( $this->newly_created_post_id, '' );
+		// We need to manually construct the edit link.
+		// The get_edit_post_link() function returns an empty string when run via WP Cron
+		// because there is no logged-in user to check permissions against.
+		$post_edit_link = admin_url( 'post.php?post=' . $this->newly_created_post_id . '&action=edit' );
 
 		$content = "Hi,\r\n\r\na new $status post has been created for news of the week. Please review it, you can do so at:\r\n\r\n";
 
