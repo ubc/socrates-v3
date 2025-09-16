@@ -96,6 +96,7 @@ class Socrates_Bookmark_Creator {
 
 		// Remove all of the dupes from our cloned copy of the links
 		foreach ( $dupes as $did => $dupe_key ) {
+			\UBC\CTLT\Socrates_Helpers::socrates_log( array( 'Removing dupe' => $dupe_key ) );
 			unset( $links[ $dupe_key ] );
 		}
 
@@ -134,6 +135,8 @@ class Socrates_Bookmark_Creator {
 				'link_rating'      => absint( $article['score'] ),
 				'link_visible'     => 'N', // Visibility is used to determine whether it's been in the NotW yet or not.
 			);
+
+			\UBC\CTLT\Socrates_Helpers::socrates_log( array( 'Creating bookmark' => $bookmark_data ) );
 
 			$inserted_link = \wp_insert_link( $bookmark_data, true );
 

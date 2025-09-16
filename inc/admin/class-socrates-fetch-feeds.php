@@ -169,7 +169,8 @@ class Socrates_Fetch_Feeds {
 
 		// Escape to stay safe.
 		$unique_article_url = esc_url( $unique_article_url );
-
+		\UBC\CTLT\Socrates_Helpers::socrates_log( array( 'Fetching article content and excerpt' => $unique_article_url ) );
+		file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- FETCHING ARTICLE CONTENT AND EXCERPT ---\n" . print_r( $unique_article_url, true ) . "\n\n", FILE_APPEND ); // phpcs:ignore
 		// Try to fetch the full page's DOM using wp_remote_get.
 		$response = wp_remote_get( $unique_article_url, $request_options );
 
@@ -372,8 +373,7 @@ class Socrates_Fetch_Feeds {
 		// Send the prompt to the LLM.
 		$request = new Socrates_Send_LLM_Request();
 
-		// Log the prompt being sent to the LLM for debugging purposes.
-		// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'LLM Prompt' => $this->prompt ), true ), FILE_APPEND );
+		\UBC\CTLT\Socrates_Helpers::socrates_log( array( 'LLM Prompt' => $this->prompt ) );
 
 		$request->set_prompt( $this->prompt );
 		$request->send_request( true ); // Request JSON mode.
@@ -382,8 +382,7 @@ class Socrates_Fetch_Feeds {
 		// Get the potentially parsed response (array if JSON is successful, string/null otherwise).
 		$parsed_llm_data = $request->get_llm_response_data( true );
 
-		// Log the response from the LLM for debugging purposes.
-		// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'LLM Parsed Response' => $parsed_llm_data ), true ), FILE_APPEND );
+		\UBC\CTLT\Socrates_Helpers::socrates_log( array( 'LLM Parsed Response' => $parsed_llm_data ) );
 
 		// Store the parsed data (could be array, string on error, or null).
 		$this->llm_response = $parsed_llm_data;
@@ -400,7 +399,7 @@ class Socrates_Fetch_Feeds {
 
 		// Check if the LLM response is a valid array (successful JSON parse).
 		if ( ! is_array( $this->llm_response ) ) {
-			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( __FILE__, __LINE__, 'LLM Response is not a valid array. Cannot process bookmarks.', 'Response' => $this->llm_response ), true ), FILE_APPEND ); // phpcs:ignore
+			\UBC\CTLT\Socrates_Helpers::socrates_log( array( 'LLM Response is not a valid array. Cannot process bookmarks.' => $this->llm_response ) );
 			return array(); // Return empty array on error or non-array response.
 		}
 
@@ -424,7 +423,7 @@ class Socrates_Fetch_Feeds {
 
 			// Validate the structure of the current item.
 			if ( ! isset( $link_data['post_id'], $link_data['score'], $link_data['category'], $link_data['confidence'] ) ) {
-				// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( __FILE__, __LINE__, 'Skipping invalid link data item', 'Item' => $link_data ), true ), FILE_APPEND ); // phpcs:ignore
+				\UBC\CTLT\Socrates_Helpers::socrates_log( array( 'Skipping invalid link data item' => $link_data ) );
 				continue;
 			}
 
@@ -436,12 +435,13 @@ class Socrates_Fetch_Feeds {
 			// Find the corresponding original link data using post_id (adjusting for 0-based index).
 			$original_link_index = $post_id - 1;
 			if ( ! isset( $this->links[ $original_link_index ] ) ) {
-				// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( __FILE__, __LINE__, 'Could not find original link data for post_id', 'post_id' => $post_id ), true ), FILE_APPEND ); // phpcs:ignore
+				\UBC\CTLT\Socrates_Helpers::socrates_log( array( 'Could not find original link data for post_id' => $post_id ) );
 				continue;
 			}
 			$link = $this->links[ $original_link_index ];
 
 			if ( $this_links_score < $threshold_score ) {
+				\UBC\CTLT\Socrates_Helpers::socrates_log( array( 'Link score does not meet threshold' => $this_links_score ) );
 				continue;
 			}
 
@@ -454,6 +454,8 @@ class Socrates_Fetch_Feeds {
 				'category'   => $category,
 				'confidence' => $confidence,
 			);
+
+			\UBC\CTLT\Socrates_Helpers::socrates_log( array( 'Adding link to usable data' => $link ) );
 
 		}
 

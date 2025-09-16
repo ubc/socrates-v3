@@ -1015,13 +1015,13 @@ class Socrates_Helpers {
 		// This will be implemented in a future step.
 		// Get the accumulated results from all the feed processing workers.
 		$processed_links = get_transient( 'socrates_feed_results' );
-		$log_message     = '--- Final LLM & Bookmark Creation Step Initiated. Processing ' . count( $processed_links ) . " collected links. ---\n";
+		// $log_message     = '--- Final LLM & Bookmark Creation Step Initiated. Processing ' . count( $processed_links ) . " collected links. ---\n";
 		// file_put_contents( WP_CONTENT_DIR . '/debug.log', $log_message, FILE_APPEND ); // phpcs:ignore
 
 		// If there's nothing to process, we can stop.
 		if ( empty( $processed_links ) || ! is_array( $processed_links ) ) {
 			delete_transient( 'socrates_feed_results' ); // Clean up just in case.
-			// file_put_contents( WP_CONTENT_DIR . '/debug.log', "No links to process. Aborting.\n", FILE_APPEND ); // phpcs:ignore
+			self::socrates_log( array( 'No links to process. Aborting.' ) );
 			return;
 		}
 
@@ -1036,7 +1036,7 @@ class Socrates_Helpers {
 			// If we got valid results, create the bookmarks.
 			if ( ! empty( $llm_results ) ) {
 				self::create_bookmarks( $llm_results );
-				// file_put_contents( WP_CONTENT_DIR . '/debug.log', 'Bookmark creation complete for ' . count( $llm_results ) . " links.\n", FILE_APPEND ); // phpcs:ignore
+				self::socrates_log( array( 'Bookmark creation complete for' => count( $llm_results ) . ' links.' ) );
 			}
 
 			// All done! Update the 'last fetched' time.
@@ -1051,5 +1051,43 @@ class Socrates_Helpers {
 			delete_transient( 'socrates_feed_results' );
 			// file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- Staggered Feed Fetch Finished ---\n", FILE_APPEND ); // phpcs:ignore
 		}
+	}
+
+	/**
+	 * A helper function for logging output to a log file.
+	 *
+	 * Usage: \UBC\CTLT\Socrates_Helpers::socrates_log( 'My debug message' );
+	 *        \UBC\CTLT\Socrates_Helpers::socrates_log( $my_array );
+	 *
+	 * @param mixed $message The message or data to log. Can be any type.
+	 * @return void
+	 */
+	public static function socrates_log( $message ) {
+		// Bail if our logging constant is not set to true.
+		if ( ! defined( 'SOCRATES_DEBUG_LOG' ) || true !== SOCRATES_DEBUG_LOG ) {
+			return;
+		}
+
+		// Get the backtrace to find the caller's file and line.
+		$backtrace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 2 );
+		$caller    = isset( $backtrace[1] ) ? $backtrace[1] : $backtrace[0];
+		$file      = isset( $caller['file'] ) ? $caller['file'] : 'unknown_file';
+		$line      = isset( $caller['line'] ) ? $caller['line'] : 'unknown_line';
+
+		// Sanitize file path.
+		$file = str_replace( ABSPATH, '', $file );
+
+		$log_file = WP_CONTENT_DIR . '/socrates.log';
+		$time     = current_time( 'mysql' );
+
+		// If the message is an array or object, use print_r for a readable format.
+		if ( is_array( $message ) || is_object( $message ) ) {
+			$message = print_r( $message, true );
+		}
+
+		$log_entry = sprintf( "[%s] [%s:%s] - %s\n", $time, $file, $line, $message );
+
+		// Append the log entry to the file.
+		file_put_contents( $log_file, $log_entry, FILE_APPEND | LOCK_EX );
 	}
 }//end class

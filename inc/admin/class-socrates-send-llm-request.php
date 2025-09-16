@@ -163,7 +163,7 @@ class Socrates_Send_LLM_Request {
 				$class_to_load = apply_filters( 'socrates_v3_custom_llm_class', '', $this->tool );
 				if ( empty( $class_to_load ) ) {
 					// Log the error for debugging.
-					// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( __FILE__, __LINE__, 'Unsupported tool', $this->tool ), true ), FILE_APPEND ); // phpcs:ignore
+					\UBC\CTLT\Socrates_Helpers::socrates_log( array( 'Unsupported tool' => $this->tool ) );
 					wp_die( 'Invalid or unsupported LLM tool selected: ' . esc_html( $this->tool ) );
 				}
 		}
@@ -187,14 +187,14 @@ class Socrates_Send_LLM_Request {
 
 		// Check if the determined class has a file path defined.
 		if ( ! array_key_exists( $class_to_load, $file_to_load_for_chosen_llm_class ) ) {
-			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( __FILE__, __LINE__, 'file not defined for class', $class_to_load, $file_to_load_for_chosen_llm_class ), true ), FILE_APPEND ); // phpcs:ignore
+			\UBC\CTLT\Socrates_Helpers::socrates_log( array( 'No file path defined for the chosen LLM class' => $class_to_load ) );
 			wp_die( 'No file path defined for the chosen LLM class: ' . esc_html( $class_to_load ) );
 		}
 
 		$file_path = $file_to_load_for_chosen_llm_class[ $class_to_load ];
 
 		if ( ! file_exists( $file_path ) ) {
-			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( __FILE__, __LINE__, 'file does not exist', $file_path, $class_to_load ), true ), FILE_APPEND ); // phpcs:ignore
+			\UBC\CTLT\Socrates_Helpers::socrates_log( array( 'LLM class file does not exist' => $file_path ) );
 			wp_die( 'LLM class file does not exist: ' . esc_html( $file_path ) );
 		}
 
@@ -247,7 +247,7 @@ class Socrates_Send_LLM_Request {
 
 		// Get the LLM Class to generate the full request we need to send.
 		$request = $this->client_class->get_request( $request_params, $use_json_mode );
-
+		\UBC\CTLT\Socrates_Helpers::socrates_log( array( 'LLM Request' => $request ) );
 		// Store this request locally.
 		$this->request = $request;
 	}//end set_request()
@@ -265,6 +265,9 @@ class Socrates_Send_LLM_Request {
 		// The actual request we'll make against the LLM, is created within the specific LLM class.
 		$this->set_request( $use_json_mode );
 
+		\UBC\CTLT\Socrates_Helpers::socrates_log( array( 'About to make this request' => $this->request ) );
+		\UBC\CTLT\Socrates_Helpers::socrates_log( array( 'Using this client' => $this->client ) );
+
 		$data = $this->client_class->make_request( $this->client, $this->request );
 
 		$this->llm_response_data = $data;
@@ -280,7 +283,11 @@ class Socrates_Send_LLM_Request {
 	 *               Returns error string if the initial response indicates an error.
 	 * @since 3.0.1 (Modified in 3.5.0 to reflect reasoning return type)
 	 */
-	public function get_llm_response_data() {
+	public function get_llm_response_data( $use_json_mode = false ) {
+		if ( $use_json_mode ) {
+			$response_string = $this->abstract_data_from_llm_response( true );
+			return json_decode( $response_string, true );
+		}
 		return $this->llm_response_data;
 	}//end get_llm_response_data()
 
@@ -297,8 +304,10 @@ class Socrates_Send_LLM_Request {
 	 */
 	public function abstract_data_from_llm_response( $use_json_mode = false ) {
 		if ( empty( $this->llm_response_data ) ) {
+			\UBC\CTLT\Socrates_Helpers::socrates_log( array( 'Error: No LLM response data to process. Call send_request() first.' ) );
 			return 'Error: No LLM response data to process. Call send_request() first.';
 		}
+		\UBC\CTLT\Socrates_Helpers::socrates_log( array( 'About to get response string' => $this->llm_response_data ) );
 		return $this->client_class->get_response_string( $this->llm_response_data, $use_json_mode );
 	}//end abstract_data_from_llm_response()
 }

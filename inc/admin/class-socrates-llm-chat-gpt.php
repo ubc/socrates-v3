@@ -105,17 +105,18 @@ class Socrates_LLM_Chat_Gpt {
 	 */
 	public function make_request( $client, $request ) {
 
-		// file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- OPENAI REQUEST SENT ---\n" . print_r( $request, true ) . "\n\n", FILE_APPEND ); // phpcs:ignore
+		\UBC\CTLT\Socrates_Helpers::socrates_log( array( 'OpenAI Request' => $request ) );
 
 		try {
 
 			$data = $client->chat()->create( $request );
-			// file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- OPENAI RESPONSE RECEIVED ---\n" . print_r( $data, true ) . "\n\n", FILE_APPEND ); // phpcs:ignore
+			\UBC\CTLT\Socrates_Helpers::socrates_log( array( 'OpenAI Response' => $data ) );
+
 			return $data;
 
 		} catch ( \OpenAI\Exceptions\ErrorException $e ) {
 
-			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'OpenAI API Error' => $e->getMessage() ), true ), FILE_APPEND ); // phpcs:ignore
+			\UBC\CTLT\Socrates_Helpers::socrates_log( array( 'OpenAI API Error' => $e->getMessage() ) );
 
 			return array(
 				'error'   => true,
@@ -124,7 +125,7 @@ class Socrates_LLM_Chat_Gpt {
 
 		} catch ( \Exception $e ) {
 
-			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'OpenAI Unexpected Error' => $e->getMessage() ), true ), FILE_APPEND ); // phpcs:ignore
+			\UBC\CTLT\Socrates_Helpers::socrates_log( array( 'OpenAI Unexpected Error' => $e->getMessage() ) );
 
 			return array(
 				'error'   => true,
@@ -150,27 +151,30 @@ class Socrates_LLM_Chat_Gpt {
 
 		// Test if we have caught an error during the request itself.
 		if ( is_array( $llm_response_data ) && isset( $llm_response_data['error'] ) && true === $llm_response_data['error'] ) {
+			\UBC\CTLT\Socrates_Helpers::socrates_log( array( 'LLM Response Error' => $llm_response_data['message'] ) );
 			return 'Error: ' . $llm_response_data['message'];
 		}
 
 		// Check for API errors returned in the response object.
 		if ( isset( $llm_response_data->error ) ) {
 			$error_message = 'OpenAI API Error: ' . ( $llm_response_data->error->message ?? 'Unknown error' );
-			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'OpenAI Response Error' => $llm_response_data->error ), true ), FILE_APPEND ); // phpcs:ignore
+			\UBC\CTLT\Socrates_Helpers::socrates_log( array( 'LLM Response Error' => $error_message ) );
 			return 'Error: ' . $error_message;
 		}
 
 		// Check if the response structure is valid.
 		if ( ! isset( $llm_response_data->choices[0]->message->content ) ) {
-			// file_put_contents( WP_CONTENT_DIR . '/debug.log', print_r( array( 'Invalid OpenAI Response Structure' => $llm_response_data ), true ), FILE_APPEND ); // phpcs:ignore
+			\UBC\CTLT\Socrates_Helpers::socrates_log( array( 'LLM Response Error' => 'Invalid response structure from OpenAI.' ) );
 			return 'Error: Invalid response structure from OpenAI.';
 		}
 
 		// Get the primary response content.
 		$raw_content = $llm_response_data->choices[0]->message->content;
+		\UBC\CTLT\Socrates_Helpers::socrates_log( array( 'LLM Raw Content' => $raw_content ) );
 
 		// If JSON mode was used, the raw content should be the JSON string.
 		if ( $use_json_mode ) {
+			\UBC\CTLT\Socrates_Helpers::socrates_log( array( 'LLM Raw Content' => 'JSON mode used.' ) );
 			return $raw_content;
 		}
 
@@ -195,6 +199,9 @@ class Socrates_LLM_Chat_Gpt {
 			$reasoning     = trim( $matches[2] ); // Captured reasoning content.
 			$main_response = trim( $matches[3] ); // Captured main response content.
 		}
+
+		\UBC\CTLT\Socrates_Helpers::socrates_log( array( 'LLM Reasoning' => $reasoning ) );
+		\UBC\CTLT\Socrates_Helpers::socrates_log( array( 'LLM Main Response' => $main_response ) );
 
 		// If not JSON mode, return the extracted parts.
 		return array(
