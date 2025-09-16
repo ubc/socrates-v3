@@ -75,7 +75,7 @@ class Socrates_Notw_Post_Creator {
 	 *
 	 * @var int|false
 	 */
-	private $newly_created_post_id = false;
+	public $newly_created_post_id = false;
 
 	/**
 	 * Initialize ourselves.

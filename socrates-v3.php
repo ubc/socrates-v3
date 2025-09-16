@@ -268,7 +268,8 @@ class SocratesV3 {
 		}
 
 		// Sanitize input.
-		$reply = wp_kses_post( $_POST['reply'] );
+		$reply   = wp_kses_post( $_POST['reply'] );
+		$chat_id = \UBC\CTLT\Socrates_Helpers::socrates_sanitize_chat_id( $_POST['chatID'] );
 
 		// If reply fails validation, or is now empty, return an error.
 		if ( empty( $reply ) ) {
@@ -276,8 +277,6 @@ class SocratesV3 {
 		}
 
 		// ChatID is sent via the AJAX request.
-		$chat_id = sanitize_text_field( $_POST['chatID'] );
-
 		if ( ! $chat_id ) {
 			wp_send_json_error( array( 'message' => 'E02. Chat ID is empty. Please reload and try again.' ) );
 		}
@@ -359,16 +358,10 @@ class SocratesV3 {
 		$request = new Socrates_Send_LLM_Request();
 		$request->set_prompt( $messages_for_llm );
 
-		// Log the prompt being sent to the LLM.
-		// file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- PROMPT SENT TO LLM ---\n" . print_r( $messages_for_llm, true ) . "\n\n", FILE_APPEND ); // phpcs:ignore
-
 		$request->send_request( $use_json_mode );
 
 		// This is the response from the LLM, now potentially an array with reasoning.
 		$llm_response_data = $request->get_llm_response_data();
-
-		// Log the raw response from the LLM.
-		// file_put_contents( WP_CONTENT_DIR . '/debug.log', "--- RAW RESPONSE FROM LLM ---\n" . print_r( $llm_response_data, true ) . "\n\n", FILE_APPEND ); // phpcs:ignore
 
 		// Check for errors returned by the LLM request/parsing process.
 		$response_parts = $request->abstract_data_from_llm_response( $use_json_mode );
@@ -408,7 +401,7 @@ class SocratesV3 {
 
 		// If this is the user's 1st actual reply, we need to set it as the summary.
 		// The 1st and 2nd messages are the initial prompt and the first reply.
-		if ( 2 === count( $chats[ $chat_id ]['messages'] ) ) {
+		if ( 2 === count( $messages ) - 1 ) {
 			$chats[ $chat_id ]['summary'] = \UBC\CTLT\Socrates_Helpers::limit_text( $reply, 5 );
 		}
 
@@ -423,18 +416,16 @@ class SocratesV3 {
 
 		$messages[] = $llm_response_to_save;
 
-		$chats[ $chat_id ]['messages'] = $messages;
-
 		// Get relevant links based on the main response string.
-		$links_results  = \UBC\CTLT\Socrates_Helpers::get_links_for_response( $llm_category );
+		$links_results  = \UBC\CTLT\Socrates_Helpers::get_links_for_response( $llm_category, $chat_id );
 		$links_for_html = $links_results['links_for_html'];
 		$link_ids       = $links_results['link_ids'];
 
 		// Store the IDs of the links shown in this turn.
-		$this_chat_links   = isset( $chats[ $chat_id ]['links_shown'] ) && is_array( $chats[ $chat_id ]['links_shown'] ) ? $chats[ $chat_id ]['links_shown'] : array();
-		$this_chat_links[] = $link_ids;
+		$last_message_key                             = array_key_last( $messages );
+		$messages[ $last_message_key ]['links_shown'] = $link_ids;
 
-		$chats[ $chat_id ]['links_shown'] = $this_chat_links;
+		$chats[ $chat_id ]['messages'] = $messages;
 
 		// Save the updated chat history (including user message, assistant message, links shown) to user meta.
 		$user_meta_updated = update_user_meta( $user_id, 'socratic_chats', $chats );
@@ -444,8 +435,6 @@ class SocratesV3 {
 			array_pop( $messages ); // Remove assistant message.
 			array_pop( $messages ); // Remove user message.
 			$chats[ $chat_id ]['messages'] = $messages;
-			array_pop( $this_chat_links ); // Remove last link set.
-			$chats[ $chat_id ]['links_shown'] = $this_chat_links;
 			wp_send_json_error( array( 'message' => 'E06. Failed to save this conversation turn. Please reload and try again.' ) );
 		}
 

@@ -17,23 +17,23 @@ use DonatelloZa\RakePlus\RakePlus;
 class Socrates_Helpers {
 
 	/**
-	 * Gets the links shown for a specific prompt
+	 * Gets the links that have already been shown for a specific prompt.
 	 *
-	 * @param  [integer] $prompt_id
-	 * @param  [string]  $chat_id
+	 * @param  [integer] $prompt_id The ID of the prompt.
+	 * @param  [string]  $chat_id The ID of the chat.
 	 *
 	 * @return array
 	 * @since 3.0.1
 	 */
 	public static function socrates_get_links_shown_for_specific_prompt( $prompt_id, $chat_id ) {
 
-		// Sanitize
+		// Sanitize the chat and prompt IDs.
 		$chat_id   = self::socrates_sanitize_chat_id( $chat_id );
 		$prompt_id = absint( $prompt_id );
 
 		// in the 'links_shown' array, the zeroth item is shown with the second prompt shown to the user which is item 3 (zero-based) in 'messages'
 		// The 1st item is shown with the third prompt shown to the user which is item 5 in 'messages'
-		// The 2nd item is shown with the fourth prompt shown to the user which is item 7 in 'messages'
+		// The 2nd item is shown with the fourth prompt shown to the user which is item 7 in 'messages'.
 		$user_meta = get_user_meta( get_current_user_id(), 'socratic_chats', true );
 
 		// If this is the first time a user has used this, their user meta for this will be empty.
@@ -206,83 +206,168 @@ class Socrates_Helpers {
 	}//end socrates_generate_combinations()
 
 	/**
+	 * Retrieves all unique link IDs that have been shown in a specific chat session.
+	 *
+	 * This method iterates through all messages of a given chat and collects the IDs
+	 * of links that were previously shown to the user.
+	 *
+	 * @param string $chat_id The ID of the chat to check.
+	 * @return array A unique list of link IDs shown in the chat.
+	 * @since 3.5.1
+	 */
+	private static function get_all_links_shown_in_chat( $chat_id ) {
+		$socratic_chats = self::get_socratic_chats_for_user( get_current_user_id() );
+		if ( ! isset( $socratic_chats[ $chat_id ] ) ) {
+			self::socrates_log( array( 'No chat found for chat ID' => $chat_id ) );
+			return array();
+		}
+
+		// Links may be at the top level - alongside messages or summary - or they may be
+		// in the 'messages' array i.e.
+		/*
+			'f090d653bc4adcf78e06aacedca237ea' => array(
+				'messages' => array(
+					0 => array( 'role' => 'assistant', 'content' => '...', 'links_shown' => array() ),
+					1 => array( 'role' => 'user', 'content' => '...', 'links_shown' => array( 0 => 123, 1 => 45, 2 => 67 ) ),
+				),
+				'summary' => '',
+				'links_shown' => array( 0 => 3453, 1 => 9897, 2 => 6789 ),
+			)
+		*/
+
+		$all_link_ids = array();
+		$this_chat    = $socratic_chats[ $chat_id ];
+
+		// Collect links from the top-level 'links_shown' array.
+		if ( ! empty( $this_chat['links_shown'] ) && is_array( $this_chat['links_shown'] ) ) {
+			// This could be a flat array of IDs, or an array of arrays of IDs.
+			// The array_walk_recursive with a closure is a simple way to flatten it.
+			array_walk_recursive(
+				$this_chat['links_shown'],
+				function ( $value ) use ( &$all_link_ids ) {
+					$all_link_ids[] = $value;
+				}
+			);
+		}
+
+		// Collect links from within each message.
+		if ( ! empty( $this_chat['messages'] ) && is_array( $this_chat['messages'] ) ) {
+			foreach ( $this_chat['messages'] as $message ) {
+				if ( ! empty( $message['links_shown'] ) && is_array( $message['links_shown'] ) ) {
+					$all_link_ids = array_merge( $all_link_ids, $message['links_shown'] );
+				}
+			}
+		}
+
+		self::socrates_log( array( 'All link IDs shown in chat so far' => $all_link_ids ) );
+		return array_unique( array_map( 'absint', $all_link_ids ) );
+	}
+
+	/**
 	 * Generates the links for the given response from the LLM if and only if we're showing links.
 	 *
 	 * Usage: $links = \UBC\CTLT\Socrates_Helpers::get_links_for_response( $llm_response_string );
 	 *
 	 * @param  string $category The category of the links we're generating.
+	 * @param  string $chat_id The ID of the current chat session.
 	 *
 	 * @return array
 	 * @since 3.0.1
 	 */
-	public static function get_links_for_response( $category ) {
+	public static function get_links_for_response( $category, $chat_id ) {
+
+		self::socrates_log(
+			array(
+				'Getting links for response. Category' => $category,
+				'Chat ID'                              => $chat_id,
+			)
+		);
 
 		// If we're not using links - determined by the socratic_hide_links_in_reply option, return an empty array.
 		if ( 1 === absint( get_option( 'socratic_hide_links_in_reply' ) ) ) {
+			self::socrates_log( 'Link display is disabled in settings.' );
 			return array(
 				'links_for_html' => array(),
 				'link_ids'       => array(),
 			);
 		}
 
-		$links_for_html = array();
-		$link_ids       = array();
+		$shown_link_ids = self::get_all_links_shown_in_chat( $chat_id );
+		self::socrates_log( array( 'Links already shown in this chat' => $shown_link_ids ) );
 
-		// Sanitize the incoming category.
-		$category = sanitize_text_field( $category );
+		$contextual_pool = array();
+		$final_links     = array();
+		$limit           = 3;
 
-		// Fetch links for the specified category.
-		$bookmarks = get_bookmarks(
+		self::socrates_log( array( 'Potential links' => $potential_links ) );
+
+		// 1. Fetch a pool of potential contextual links for the specified category.
+		$potential_links = get_bookmarks(
 			array(
-				'category_name'  => $category,
-				'orderby'        => 'rand',
-				'limit'          => 3,
-				'hide_invisible' => 0, // Include all curated links.
+				'category_name' => sanitize_text_field( $category ),
+				'orderby'       => 'rating', // Still prefer higher-rated links to be in the pool.
+				'order'         => 'DESC',
+				'limit'         => 15, // Fetch a larger pool to allow for randomization.
+				'exclude'       => implode( ',', $shown_link_ids ),
 			)
 		);
 
-		// If we have some search results for the links, we show them to the user.
-		if ( ! empty( $bookmarks ) ) {
-			foreach ( $bookmarks as $bookmark ) {
-				$links_for_html[] = array(
-					'url'   => $bookmark->link_url,
-					'title' => $bookmark->link_name,
-				);
-				$link_ids[]       = $bookmark->link_id;
-			}
+		if ( is_array( $potential_links ) && ! empty( $potential_links ) ) {
+			$contextual_pool = $potential_links;
 		}
+		self::socrates_log( array( 'Found contextual links pool count' => count( $contextual_pool ) ) );
 
-		// Check if we need to add random links as a fallback.
-		$include_random = get_option( 'socratic_include_random_links', false );
-		if ( $include_random && count( $links_for_html ) < 3 ) {
-			$needed      = 3 - count( $links_for_html );
-			$exclude_ids = implode( ',', $link_ids );
+		// 2. Shuffle the contextual pool and select the initial set of links.
+		shuffle( $contextual_pool );
+		$final_links = array_slice( $contextual_pool, 0, $limit );
+		self::socrates_log( array( 'Selected contextual links after shuffle' => wp_list_pluck( $final_links, 'link_id' ) ) );
 
-			$random_links = get_bookmarks(
+		// 3. Handle fallback to random links if we still don't have enough.
+		$needed = $limit - count( $final_links );
+		if ( $needed > 0 && 1 === absint( get_option( 'socratic_include_random_links' ) ) ) {
+			self::socrates_log( "Not enough contextual links, need to find {$needed} random links." );
+			// Add the links we've already selected to the exclusion list.
+			foreach ( $final_links as $link ) {
+				if ( ! in_array( $link->link_id, $shown_link_ids ) ) {
+					$shown_link_ids[] = $link->link_id;
+				}
+			}
+
+			// Fetch more random links than needed to account for potential overlaps.
+			$potential_random_links = get_bookmarks(
 				array(
-					'orderby'        => 'rand',
-					'limit'          => $needed,
-					'exclude'        => $exclude_ids,
-					'hide_invisible' => 0, // Include all curated links.
+					'orderby' => 'rand',
+					'limit'   => $needed + 10,
+					'exclude' => implode( ',', $shown_link_ids ),
 				)
 			);
 
-			if ( ! empty( $random_links ) ) {
-				foreach ( $random_links as $random_link ) {
-					$links_for_html[] = array(
-						'url'   => $random_link->link_url,
-						'title' => $random_link->link_name,
-					);
-					$link_ids[]       = $random_link->link_id;
-				}
+			if ( is_array( $potential_random_links ) ) {
+				self::socrates_log( array( 'Found random links pool count' => count( $potential_random_links ) ) );
+				// Fill the remaining spots with random links.
+				$random_fill = array_slice( $potential_random_links, 0, $needed );
+				self::socrates_log( array( 'Selected random links to fill' => wp_list_pluck( $random_fill, 'link_id' ) ) );
+				$final_links = array_merge( $final_links, $random_fill );
 			}
 		}
 
-		$response_links                   = array();
-		$response_links['links_for_html'] = $links_for_html;
-		$response_links['link_ids']       = $link_ids;
+		$links_for_html = array();
+		$link_ids       = array();
 
-		return $response_links;
+		foreach ( $final_links as $link ) {
+			$links_for_html[] = array(
+				'url'   => $link->link_url,
+				'title' => $link->link_name,
+			);
+			$link_ids[]       = $link->link_id;
+		}
+
+		self::socrates_log( array( 'Final link IDs to be returned' => $link_ids ) );
+
+		return array(
+			'links_for_html' => $links_for_html,
+			'link_ids'       => $link_ids,
+		);
 	}//end get_links_for_response()
 
 
@@ -1035,8 +1120,9 @@ class Socrates_Helpers {
 
 			// If we got valid results, create the bookmarks.
 			if ( ! empty( $llm_results ) ) {
+				self::socrates_log( array( 'LLM Results' => $llm_results ) );
 				self::create_bookmarks( $llm_results );
-				self::socrates_log( array( 'Bookmark creation complete for' => count( $llm_results ) . ' links.' ) );
+
 			}
 
 			// All done! Update the 'last fetched' time.
