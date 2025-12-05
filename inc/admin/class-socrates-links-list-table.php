@@ -49,7 +49,7 @@ class Socrates_Links_List_Table extends \WP_List_Table {
 	 * @return array
 	 */
 	public function get_columns() {
-		return array(
+		$columns = array(
 			'cb'           => '<input type="checkbox" />',
 			'link_name'    => esc_html__( 'Name', 'socrates-v3' ),
 			'link_url'     => esc_html__( 'URL', 'socrates-v3' ),
@@ -57,6 +57,17 @@ class Socrates_Links_List_Table extends \WP_List_Table {
 			'link_rating'  => esc_html__( 'Rating', 'socrates-v3' ),
 			'link_visible' => esc_html__( 'Visible', 'socrates-v3' ),
 		);
+
+		/**
+		 * Filters the columns shown in the links list table.
+		 *
+		 * Allows plugins to add custom columns to the links table.
+		 *
+		 * @since 3.5.0
+		 *
+		 * @param array $columns An array of column names.
+		 */
+		return apply_filters( 'socrates_links_table_columns', $columns );
 	}
 
 	/**
@@ -75,6 +86,27 @@ class Socrates_Links_List_Table extends \WP_List_Table {
 	}
 
 	/**
+	 * Get a list of bulk actions.
+	 *
+	 * @since 3.5.0
+	 * @return array
+	 */
+	protected function get_bulk_actions() {
+		$actions = array();
+
+		/**
+		 * Filters the bulk actions available for links in the list table.
+		 *
+		 * Allows plugins to add custom bulk actions (e.g., "Index with RAG").
+		 *
+		 * @since 3.5.0
+		 *
+		 * @param array $actions An array of bulk action key => label pairs.
+		 */
+		return apply_filters( 'socrates_links_table_bulk_actions', $actions );
+	}
+
+	/**
 	 * Default column rendering.
 	 *
 	 * @param object $item The item being rendered.
@@ -82,6 +114,26 @@ class Socrates_Links_List_Table extends \WP_List_Table {
 	 * @return mixed
 	 */
 	protected function column_default( $item, $column_name ) {
+		/**
+		 * Filters the output of custom columns in the links list table.
+		 *
+		 * Allows plugins to render their own custom column content.
+		 * If the filter returns a non-null value, that value will be used
+		 * and the default column rendering will be bypassed.
+		 *
+		 * @since 3.5.0
+		 *
+		 * @param mixed  $output      The column output. Default null.
+		 * @param object $item        The current link item (bookmark object).
+		 * @param string $column_name The name of the column.
+		 */
+		$output = apply_filters( 'socrates_links_table_column_' . $column_name, null, $item, $column_name );
+
+		if ( null !== $output ) {
+			return $output;
+		}
+
+		// Default column rendering.
 		switch ( $column_name ) {
 			case 'link_url':
 				return esc_html( $item->link_url );
@@ -119,6 +171,18 @@ class Socrates_Links_List_Table extends \WP_List_Table {
 			'edit'   => sprintf( '<a href="%s">%s</a>', $edit_link, esc_html__( 'Edit', 'socrates-v3' ) ),
 			'delete' => sprintf( '<a href="%s" class="delete-link">%s</a>', esc_url( wp_nonce_url( "link.php?action=delete&amp;link_id={$item->link_id}", "delete-bookmark_{$item->link_id}" ) ), esc_html__( 'Delete', 'socrates-v3' ) ),
 		);
+
+		/**
+		 * Filters the row actions shown for each link in the list table.
+		 *
+		 * Allows plugins to add custom row actions (e.g., "Index with RAG").
+		 *
+		 * @since 3.5.0
+		 *
+		 * @param array  $actions An array of row action links.
+		 * @param object $item    The current link item (bookmark object).
+		 */
+		$actions = apply_filters( 'socrates_links_table_row_actions', $actions, $item );
 
 		$title = sprintf(
 			'<a href="%s" class="row-title">%s</a>',

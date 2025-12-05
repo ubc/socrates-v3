@@ -416,8 +416,12 @@ class SocratesV3 {
 
 		$messages[] = $llm_response_to_save;
 
-		// Get relevant links based on the main response string.
-		$links_results  = \UBC\CTLT\Socrates_Helpers::get_links_for_response( $llm_category, $chat_id );
+		// Get relevant links using RAG semantic search (or fallback to category-based).
+		$links_results  = \UBC\CTLT\Socrates_Helpers::get_links_via_rag(
+			$reply,           // User's message for semantic search
+			$chat_id,         // For duplicate tracking
+			$llm_category     // Fallback category if RAG unavailable/insufficient
+		);
 		$links_for_html = $links_results['links_for_html'];
 		$link_ids       = $links_results['link_ids'];
 

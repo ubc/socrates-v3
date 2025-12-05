@@ -295,11 +295,198 @@ class Socrates_Helpers {
 		$shown_link_ids = self::get_all_links_shown_in_chat( $chat_id );
 		self::socrates_log( array( 'Links already shown in this chat' => $shown_link_ids ) );
 
+		// Delegate to the category-based helper method.
+		return self::get_category_based_links( $category, 3, $shown_link_ids );
+	}//end get_links_for_response()
+
+
+	/**
+	 * Get relevant links using RAG semantic search.
+	 *
+	 * This method uses the RAG plugin's vector search to find semantically similar links
+	 * based on the user's actual message content rather than category-based filtering.
+	 *
+	 * @param string $user_message The user's chat message to search with
+	 * @param string $chat_id Current chat ID for duplicate tracking
+	 * @param string $fallback_category Optional category for fallback (from LLM)
+	 * @return array ['links_for_html' => [], 'link_ids' => []]
+	 */
+	public static function get_links_via_rag( $user_message, $chat_id, $fallback_category = '' ) {
+		self::socrates_log(
+			array(
+				'Getting links via RAG for message' => substr( $user_message, 0, 100 ),
+				'Chat ID'                           => $chat_id,
+			)
+		);
+
+		// Check if RAG-based links are enabled.
+		if ( ! get_option( 'socratic_use_rag_for_links', false ) ) {
+			self::socrates_log( 'RAG links disabled, using category-based' );
+			return self::get_links_for_response( $fallback_category, $chat_id );
+		}
+
+		// Check if RAG plugin is available.
+		if ( ! class_exists( '\UBC\RAG\API' ) ) {
+			self::socrates_log( 'RAG plugin not available, falling back to category' );
+			return self::get_links_for_response( $fallback_category, $chat_id );
+		}
+
+		// Get settings.
+		$min_similarity = floatval( get_option( 'socratic_rag_links_min_similarity', 0.6 ) );
+		$max_count      = absint( get_option( 'socratic_rag_links_max_count', 3 ) );
+		$fallback_mode  = get_option( 'socratic_rag_links_fallback', 'fill' );
+
+		// Get previously shown links to avoid duplicates.
+		$shown_link_ids = self::get_all_links_shown_in_chat( $chat_id );
+		self::socrates_log( array( 'Previously shown link IDs' => $shown_link_ids ) );
+
+		// Search RAG for relevant links - request extra to account for filtering.
+		$search_limit = $max_count * 3; // Request 3x to account for duplicates + threshold filtering.
+
+		try {
+			$rag_results = \UBC\RAG\API::search(
+				$user_message,
+				$search_limit,
+				array( 'content_type' => 'link' )  // Only search for links.
+			);
+
+			self::socrates_log( array( 'RAG returned results' => count( $rag_results ) ) );
+
+		} catch ( \Exception $e ) {
+			self::socrates_log( 'RAG search failed: ' . $e->getMessage() );
+			// Fall back to category-based on error.
+			return self::get_links_for_response( $fallback_category, $chat_id );
+		}
+
+		// Process RAG results.
+		$rag_links    = array();
+		$rag_link_ids = array();
+
+		foreach ( $rag_results as $result ) {
+			// Check similarity threshold.
+			if ( $result['score'] < $min_similarity ) {
+				self::socrates_log(
+					array(
+						'Skipping link due to low score' => $result['score'],
+						'Threshold'                       => $min_similarity,
+					)
+				);
+				continue;
+			}
+
+			// Extract metadata.
+			$payload  = $result['payload'];
+			$metadata = isset( $payload['metadata'] ) ? $payload['metadata'] : array();
+
+			// Get the actual link URL (not the WordPress permalink).
+			$link_url = isset( $metadata['link_url'] ) ? $metadata['link_url'] : '';
+			$link_id  = isset( $metadata['link_id'] ) ? $metadata['link_id'] : $payload['content_id'];
+
+			// Skip if already shown in this chat.
+			if ( in_array( $link_id, $shown_link_ids ) ) {
+				self::socrates_log( array( 'Skipping duplicate link ID' => $link_id ) );
+				continue;
+			}
+
+			// Skip if no valid URL.
+			if ( empty( $link_url ) ) {
+				self::socrates_log( 'Skipping result with no link_url' );
+				continue;
+			}
+
+			// Get link title from WordPress (ensures we have current data).
+			$bookmark = get_bookmark( $link_id );
+			if ( ! $bookmark ) {
+				self::socrates_log( array( 'Bookmark not found for ID' => $link_id ) );
+				continue;
+			}
+
+			$rag_links[] = array(
+				'url'   => $link_url,
+				'title' => $bookmark->link_name,
+				'score' => $result['score'], // Store for potential sorting/display.
+			);
+			$rag_link_ids[] = $link_id;
+
+			// Stop if we have enough links.
+			if ( count( $rag_links ) >= $max_count ) {
+				break;
+			}
+		}
+
+		self::socrates_log(
+			array(
+				'RAG links after filtering' => count( $rag_links ),
+				'Link IDs'                  => $rag_link_ids,
+			)
+		);
+
+		// Apply fallback behavior if we don't have enough links.
+		$needed = $max_count - count( $rag_links );
+
+		if ( $needed > 0 && $fallback_mode !== 'none' ) {
+			self::socrates_log( array( 'Need to fill with fallback' => $needed ) );
+
+			if ( $fallback_mode === 'category' && empty( $rag_links ) ) {
+				// Complete fallback to category system.
+				self::socrates_log( 'Complete fallback to category-based system' );
+				return self::get_links_for_response( $fallback_category, $chat_id );
+
+			} elseif ( $fallback_mode === 'fill' || $fallback_mode === 'category' ) {
+				// Fill remaining slots with category-based links.
+				self::socrates_log( 'Filling remaining slots with category links' );
+
+				// Update shown links to include RAG results.
+				$updated_shown = array_merge( $shown_link_ids, $rag_link_ids );
+
+				// Get category-based links to fill the gap.
+				$category_results = self::get_category_based_links(
+					$fallback_category,
+					$needed,
+					$updated_shown
+				);
+
+				// Merge results.
+				$rag_links    = array_merge( $rag_links, $category_results['links_for_html'] );
+				$rag_link_ids = array_merge( $rag_link_ids, $category_results['link_ids'] );
+			}
+		}
+
+		self::socrates_log(
+			array(
+				'Final link count' => count( $rag_links ),
+				'Final link IDs'   => $rag_link_ids,
+			)
+		);
+
+		return array(
+			'links_for_html' => $rag_links,
+			'link_ids'       => $rag_link_ids,
+		);
+	}//end get_links_via_rag()
+
+
+	/**
+	 * Get category-based links (used for fallback and legacy support).
+	 *
+	 * This method extracts the core link selection logic for reusability.
+	 *
+	 * @param string $category Category name for link filtering
+	 * @param int    $limit Number of links needed
+	 * @param array  $exclude_ids Link IDs to exclude from selection
+	 * @return array ['links_for_html' => [], 'link_ids' => []]
+	 */
+	private static function get_category_based_links( $category, $limit = 3, $exclude_ids = [] ) {
+		self::socrates_log(
+			array(
+				'Getting category-based links' => $category,
+				'Limit'                        => $limit,
+				'Exclude IDs'                  => $exclude_ids,
+			)
+		);
+
 		$contextual_pool = array();
 		$final_links     = array();
-		$limit           = 3;
-
-		self::socrates_log( array( 'Potential links' => $potential_links ) );
 
 		// 1. Fetch a pool of potential contextual links for the specified category.
 		$potential_links = get_bookmarks(
@@ -308,7 +495,7 @@ class Socrates_Helpers {
 				'orderby'       => 'rating', // Still prefer higher-rated links to be in the pool.
 				'order'         => 'DESC',
 				'limit'         => 15, // Fetch a larger pool to allow for randomization.
-				'exclude'       => implode( ',', $shown_link_ids ),
+				'exclude'       => implode( ',', $exclude_ids ),
 			)
 		);
 
@@ -328,8 +515,8 @@ class Socrates_Helpers {
 			self::socrates_log( "Not enough contextual links, need to find {$needed} random links." );
 			// Add the links we've already selected to the exclusion list.
 			foreach ( $final_links as $link ) {
-				if ( ! in_array( $link->link_id, $shown_link_ids ) ) {
-					$shown_link_ids[] = $link->link_id;
+				if ( ! in_array( $link->link_id, $exclude_ids ) ) {
+					$exclude_ids[] = $link->link_id;
 				}
 			}
 
@@ -338,7 +525,7 @@ class Socrates_Helpers {
 				array(
 					'orderby' => 'rand',
 					'limit'   => $needed + 10,
-					'exclude' => implode( ',', $shown_link_ids ),
+					'exclude' => implode( ',', $exclude_ids ),
 				)
 			);
 
@@ -368,7 +555,7 @@ class Socrates_Helpers {
 			'links_for_html' => $links_for_html,
 			'link_ids'       => $link_ids,
 		);
-	}//end get_links_for_response()
+	}//end get_category_based_links()
 
 
 	/**

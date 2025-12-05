@@ -92,6 +92,13 @@ class Socrates_Link_Manager {
 	 * @since 3.5.0
 	 */
 	public function render_page() {
+		// Handle bulk actions before preparing items.
+		if ( isset( $_REQUEST['action'] ) && $_REQUEST['action'] !== '-1' ) {
+			$this->handle_bulk_action( $_REQUEST['action'] );
+		} elseif ( isset( $_REQUEST['action2'] ) && $_REQUEST['action2'] !== '-1' ) {
+			$this->handle_bulk_action( $_REQUEST['action2'] );
+		}
+
 		$this->list_table = new Socrates_Links_List_Table();
 		$this->list_table->prepare_items();
 		?>
@@ -107,6 +114,36 @@ class Socrates_Link_Manager {
 			</form>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Handle bulk actions.
+	 *
+	 * Fires an action hook that other plugins can use to handle their custom bulk actions.
+	 *
+	 * @since 3.5.0
+	 *
+	 * @param string $action The bulk action to handle.
+	 * @return void
+	 */
+	private function handle_bulk_action( $action ) {
+		$link_ids = isset( $_REQUEST['link_id'] ) ? array_map( 'absint', (array) $_REQUEST['link_id'] ) : array();
+
+		if ( empty( $link_ids ) ) {
+			return;
+		}
+
+		/**
+		 * Fires when a bulk action is performed on links.
+		 *
+		 * Allows plugins to handle custom bulk actions.
+		 *
+		 * @since 3.5.0
+		 *
+		 * @param string $action   The action being performed.
+		 * @param array  $link_ids Array of link IDs to perform the action on.
+		 */
+		do_action( 'socrates_links_table_handle_bulk_action', $action, $link_ids );
 	}
 
 	/**

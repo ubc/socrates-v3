@@ -109,6 +109,39 @@ class Socrates_Settings {
 			)
 		);
 
+		// RAG-based link selection settings.
+		register_setting(
+			'socrates_socrates_settings',
+			'socratic_use_rag_for_links',
+			array(
+				'sanitize_callback' => array( $this, 'sanitize_checkbox' ),
+			)
+		);
+
+		register_setting(
+			'socrates_socrates_settings',
+			'socratic_rag_links_min_similarity',
+			array(
+				'sanitize_callback' => 'floatval',
+			)
+		);
+
+		register_setting(
+			'socrates_socrates_settings',
+			'socratic_rag_links_max_count',
+			array(
+				'sanitize_callback' => 'absint',
+			)
+		);
+
+		register_setting(
+			'socrates_socrates_settings',
+			'socratic_rag_links_fallback',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+			)
+		);
+
 		// LLM settings.
 		register_setting(
 			'socrates_llm_settings',
@@ -475,6 +508,61 @@ Your reply to this prompt should be the first question to ask the student, and t
 						<td>
 							<input type="checkbox" id="show-reasoning" name="socratic_show_reasoning" value="1" <?php checked( get_option( 'socratic_show_reasoning' ), 1 ); ?>>
 							<p class="description"><label for="show-reasoning">If checked, and the selected LLM provides its reasoning steps (often enclosed in XML-like tags such as `&lt;think&gt;` or `&lt;scratchpad&gt;`), display these steps in a collapsed section ('Socrates's Thoughts') above the main reply in the chat. This only applies to the front-end chat and <strong>the reasoning is not saved in the chat history</strong>.</label></p>
+						</td>
+					</tr>
+
+					<!-- RAG-based Link Selection Settings -->
+					<tr>
+						<th scope="row" colspan="2" style="background: #f0f0f0; padding: 10px; font-weight: bold;">
+							RAG-Based Link Selection Settings
+						</th>
+					</tr>
+
+					<!-- Use RAG for Links Checkbox -->
+					<tr>
+						<th scope="row"><label for="use-rag-for-links">Use RAG for Link Selection</label></th>
+						<td>
+							<input type="checkbox" id="use-rag-for-links" name="socratic_use_rag_for_links" value="1" <?php checked( get_option( 'socratic_use_rag_for_links' ), 1 ); ?>>
+							<p class="description"><label for="use-rag-for-links">Use semantic search to find relevant links instead of category-based selection. Requires the UBC RAG plugin to be active and configured.</label></p>
+						</td>
+					</tr>
+
+					<!-- Minimum Similarity Score field -->
+					<tr>
+						<th scope="row"><label for="rag-links-min-similarity">Minimum Similarity Score</label></th>
+						<td>
+							<input type="number" step="0.05" min="0" max="1" id="rag-links-min-similarity" name="socratic_rag_links_min_similarity" class="small-text" value="<?php echo esc_attr( get_option( 'socratic_rag_links_min_similarity', '0.6' ) ); ?>">
+							<p class="description">Only show links with similarity scores above this threshold (0-1). Higher values = more strict relevance. Default: 0.6 (60% similarity).</p>
+						</td>
+					</tr>
+
+					<!-- Maximum Links to Display field -->
+					<tr>
+						<th scope="row"><label for="rag-links-max-count">Maximum Links to Display</label></th>
+						<td>
+							<input type="number" min="1" max="10" id="rag-links-max-count" name="socratic_rag_links_max_count" class="small-text" value="<?php echo esc_attr( get_option( 'socratic_rag_links_max_count', '3' ) ); ?>">
+							<p class="description">Maximum number of relevant links to show per response. Default: 3.</p>
+						</td>
+					</tr>
+
+					<!-- Fallback Behavior dropdown -->
+					<tr>
+						<th scope="row"><label for="rag-links-fallback">Fallback Behavior</label></th>
+						<td>
+							<select id="rag-links-fallback" name="socratic_rag_links_fallback">
+								<?php
+								$fallback_options = array(
+									'fill'     => 'Fill with category-based links (Recommended)',
+									'category' => 'Complete fallback to category system',
+									'none'     => 'Show only RAG results (even if 0 links)',
+								);
+								$current_fallback = get_option( 'socratic_rag_links_fallback', 'fill' );
+								foreach ( $fallback_options as $value => $label ) {
+									echo '<option value="' . esc_attr( $value ) . '"' . selected( $current_fallback, $value, false ) . '>' . esc_html( $label ) . '</option>';
+								}
+								?>
+							</select>
+							<p class="description">What to do if RAG returns fewer links than the maximum specified above.</p>
 						</td>
 					</tr>
 
