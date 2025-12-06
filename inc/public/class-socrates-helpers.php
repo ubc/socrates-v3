@@ -31,9 +31,6 @@ class Socrates_Helpers {
 		$chat_id   = self::socrates_sanitize_chat_id( $chat_id );
 		$prompt_id = absint( $prompt_id );
 
-		// in the 'links_shown' array, the zeroth item is shown with the second prompt shown to the user which is item 3 (zero-based) in 'messages'
-		// The 1st item is shown with the third prompt shown to the user which is item 5 in 'messages'
-		// The 2nd item is shown with the fourth prompt shown to the user which is item 7 in 'messages'.
 		$user_meta = get_user_meta( get_current_user_id(), 'socratic_chats', true );
 
 		// If this is the first time a user has used this, their user meta for this will be empty.
@@ -50,16 +47,18 @@ class Socrates_Helpers {
 			return array();
 		}
 
-		// To go from prompt_id to link_id. 3 => (( 3 + 1 ) / 2) - 2 = 0. And 7 => (( 7 + 1 ) / 2) - 2 = 2. etc.
-		$links_shown_id = ( ( $prompt_id + 1 ) / 2 ) - 2;
-
-		// If we don't have a 'links_shown' array, or this specific $links_shown_id, return an empty array.
-		// This might occur if for some reason no links were shown to the user based on what the LLM replied.
-		if ( ! isset( $this_chat['links_shown'] ) || ! isset( $this_chat['links_shown'][ $links_shown_id ] ) ) {
+		// Links are now stored directly in the message at this prompt_id.
+		// Check if we have messages and if this specific message has links_shown.
+		if ( ! isset( $this_chat['messages'] ) || ! isset( $this_chat['messages'][ $prompt_id ] ) ) {
 			return array();
 		}
 
-		$links = $this_chat['links_shown'][ $links_shown_id ];
+		// If this message doesn't have links_shown, return empty array.
+		if ( ! isset( $this_chat['messages'][ $prompt_id ]['links_shown'] ) ) {
+			return array();
+		}
+
+		$links = $this_chat['messages'][ $prompt_id ]['links_shown'];
 
 		if ( empty( $links ) ) {
 			return array();
